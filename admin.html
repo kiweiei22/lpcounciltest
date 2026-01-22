@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SC Admin Portal | ระบบจัดการสภานักเรียน (Firebase)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        body { font-family: 'IBM Plex Sans Thai', sans-serif; background-color: #f1f5f9; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .sidebar { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-link { transition: all 0.2s; border-radius: 12px; }
+        .nav-link:hover, .nav-link.active { background-color: #eff6ff; color: #2563eb; font-weight: 600; }
+        .glass-table { background: white; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); overflow: hidden; }
+        tr:last-child td { border-bottom: none; }
+        .input-field { width: 100%; background: #ffffff; border: 1px solid #e2e8f0; padding: 12px 16px; border-radius: 12px; outline: none; transition: all 0.2s; font-size: 0.95rem; }
+        .input-field:focus { border-color: #3b82f6; background: white; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+        .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex overflow-hidden">
+
+    <div id="loginScreen" class="fixed inset-0 z-[60] bg-slate-900 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] shadow-2xl p-10 w-full max-w-sm text-center relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 to-cyan-400"></div>
+            <div class="w-20 h-20 bg-slate-50 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl shadow-inner">
+                <i class="fas fa-fingerprint text-blue-600"></i>
+            </div>
+            <h1 class="text-2xl font-bold mb-2 text-slate-800">Admin Portal</h1>
+            <p class="text-slate-400 mb-8 text-sm">เข้าสู่ระบบเพื่อจัดการข้อมูล</p>
+            <form onsubmit="event.preventDefault(); window.checkLogin();">
+                <div class="relative mb-4">
+                    <i class="fas fa-lock absolute left-4 top-4 text-slate-400"></i>
+                    <input type="password" id="passwordInput" placeholder="Passcode" class="w-full bg-slate-100 border-none pl-12 pr-4 py-3.5 rounded-xl font-bold text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+                <button type="submit" class="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold hover:bg-blue-600 hover:shadow-lg hover:shadow-blue-500/30 transition duration-300">Unlock Dashboard</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="md:hidden fixed w-full bg-white z-40 border-b px-4 h-16 flex items-center justify-between">
+        <div class="font-bold text-lg text-blue-900">SC ADMIN</div>
+        <button onclick="toggleSidebar()" class="text-slate-600 p-2"><i class="fas fa-bars text-xl"></i></button>
+    </div>
+
+    <div id="dashboard" class="hidden flex w-full h-full pt-16 md:pt-0">
+        <aside id="sidebar" class="sidebar w-64 bg-white border-r border-slate-200 flex-col flex-shrink-0 fixed md:relative h-full z-50 transform -translate-x-full md:translate-x-0">
+            <div class="h-20 flex items-center px-8 border-b border-slate-50">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold mr-3 shadow-md shadow-blue-500/30">SC</div>
+                <span class="font-bold text-lg tracking-tight text-slate-800">Console</span>
+                <button onclick="toggleSidebar()" class="md:hidden ml-auto text-slate-400"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <nav class="flex-1 space-y-1 p-4 overflow-y-auto">
+                <p class="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Management</p>
+                <button onclick="switchTab('complaints')" id="btn-complaints" class="nav-link active w-full p-3 flex items-center gap-3 text-slate-500">
+                    <i class="fas fa-inbox w-5 text-center"></i> <span>เรื่องร้องเรียน</span>
+                </button>
+                <button onclick="switchTab('policies')" id="btn-policies" class="nav-link w-full p-3 flex items-center gap-3 text-slate-500">
+                    <i class="fas fa-rocket w-5 text-center"></i> <span>นโยบาย</span>
+                </button>
+                <button onclick="switchTab('activities')" id="btn-activities" class="nav-link w-full p-3 flex items-center gap-3 text-slate-500">
+                    <i class="fas fa-camera w-5 text-center"></i> <span>กิจกรรม</span>
+                </button>
+                <button onclick="switchTab('members')" id="btn-members" class="nav-link w-full p-3 flex items-center gap-3 text-slate-500">
+                    <i class="fas fa-users w-5 text-center"></i> <span>สมาชิกทีม</span>
+                </button>
+            </nav>
+            <div class="mt-auto px-4 pb-4 space-y-2">
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold uppercase text-slate-500">Maintenance Mode</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="maintenanceToggle" class="sr-only peer" onchange="window.toggleMaintenance(this)">
+                            <div class="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500"></div>
+                        </label>
+                    </div>
+                    <p class="text-[10px] text-slate-400" id="maintenanceStatusText">กำลังเชื่อมต่อ...</p>
+                </div>
+            </div>
+            <div class="p-4 border-t border-slate-50">
+                <button onclick="location.reload()" class="w-full p-3 flex items-center gap-3 text-red-500 hover:bg-red-50 rounded-xl transition font-medium">
+                    <i class="fas fa-sign-out-alt w-5 text-center"></i> <span>ออกจากระบบ</span>
+                </button>
+            </div>
+        </aside>
+
+        <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/20 z-40 hidden md:hidden glass-blur"></div>
+
+        <main class="flex-1 overflow-y-auto bg-[#f8fafc] p-4 md:p-8 relative w-full">
+            
+            <div id="view-complaints" class="max-w-6xl mx-auto animate-fade-in">
+                <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div><h2 class="text-3xl font-black text-slate-800">Inbox</h2><p class="text-slate-500 text-sm">Real-time Incoming Messages</p></div>
+                </header>
+                <div class="glass-table">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left whitespace-nowrap">
+                            <thead class="bg-slate-50 border-b border-slate-100 text-slate-500 text-xs uppercase font-bold tracking-wider">
+                                <tr><th class="p-5">Date</th><th class="p-5">Topic</th><th class="p-5">Reporter</th><th class="p-5">Detail</th><th class="p-5">Status</th><th class="p-5 text-right">Action</th></tr>
+                            </thead>
+                            <tbody id="complaintTable" class="text-sm text-slate-600 divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                    <div id="complaintLoading" class="p-12 text-center text-slate-400"><i class="fas fa-circle-notch fa-spin text-2xl mb-3"></i><br>Waiting for data...</div>
+                </div>
+            </div>
+
+            <div id="view-policies" class="hidden max-w-6xl mx-auto animate-fade-in">
+                <header class="flex justify-between items-center mb-8">
+                    <div><h2 class="text-3xl font-black text-slate-800">Policies</h2><p class="text-slate-500 text-sm">จัดการความคืบหน้านโยบาย</p></div>
+                    <button onclick="openCreatePolicy()" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition text-sm"><i class="fas fa-plus mr-2"></i> เพิ่มนโยบาย</button>
+                </header>
+                <div id="policyGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <div id="view-activities" class="hidden max-w-6xl mx-auto animate-fade-in">
+                <header class="flex justify-between items-center mb-8">
+                    <div><h2 class="text-3xl font-black text-slate-800">Activities</h2><p class="text-slate-500 text-sm">ภาพกิจกรรมและข่าวสาร</p></div>
+                    <button onclick="openModal('activityModal')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition text-sm"><i class="fas fa-camera mr-2"></i> เพิ่มกิจกรรม</button>
+                </header>
+                <div id="activityGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+            </div>
+
+            <div id="view-members" class="hidden max-w-7xl mx-auto animate-fade-in">
+                <header class="flex justify-between items-center mb-8">
+                    <div><h2 class="text-3xl font-black text-slate-800">Team</h2><p class="text-slate-500 text-sm">จัดการสมาชิกสภา</p></div>
+                    <button onclick="openModal('memberModal')" class="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-blue-700 transition text-sm"><i class="fas fa-user-plus mr-2"></i> เพิ่มสมาชิก</button>
+                </header>
+                <div id="memberGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+            </div>
+
+        </main>
+    </div>
+
+    <div id="policyModal" class="hidden fixed inset-0 z-[70] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h3 id="policyModalTitle" class="font-bold text-xl mb-6 text-slate-800">เพิ่มนโยบายใหม่</h3>
+            <form id="policyForm" onsubmit="window.handleFirebaseSubmit(event, 'policies', 'policyModal')" class="space-y-4">
+                
+                <input type="hidden" name="key" id="policyKey">
+
+                <input name="title" id="policyTitle" placeholder="ชื่อนโยบาย" required class="input-field">
+                <textarea name="detail" id="policyDetail" placeholder="รายละเอียด" required class="input-field" rows="4"></textarea>
+                <div class="flex gap-3">
+                    <select name="status" id="policyStatus" class="input-field flex-1"><option value="Pending">Wait</option><option value="In Progress">Working</option><option value="Completed">Done</option></select>
+                    <input name="percent" id="policyPercent" type="number" placeholder="%" min="0" max="100" class="input-field w-24 text-center">
+                </div>
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeModal('policyModal')" class="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="activityModal" class="hidden fixed inset-0 z-[70] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h3 class="font-bold text-xl mb-6 text-slate-800">เพิ่มกิจกรรม</h3>
+            <form onsubmit="window.handleFirebaseSubmit(event, 'activities', 'activityModal')" class="space-y-4">
+                <input name="title" placeholder="ชื่อกิจกรรม" required class="input-field">
+                <select name="category" class="input-field"><option value="ACADEMIC">วิชาการ</option><option value="SPORTS">กีฬา</option><option value="VOLUNTEER">จิตอาสา</option><option value="EVENT">ทั่วไป</option></select>
+                <input name="image" placeholder="URL รูปภาพ (แนวนอน)" required class="input-field">
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeModal('activityModal')" class="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="memberModal" class="hidden fixed inset-0 z-[70] bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-3xl w-full max-w-md shadow-2xl">
+            <h3 class="font-bold text-xl mb-6 text-slate-800">เพิ่มสมาชิก</h3>
+            <form onsubmit="window.handleFirebaseSubmit(event, 'members', 'memberModal')" class="space-y-4">
+                <input name="name" placeholder="ชื่อ-นามสกุล" required class="input-field">
+                <input name="role" placeholder="ตำแหน่ง" required class="input-field">
+                <input name="image" placeholder="URL รูปโปรไฟล์" required class="input-field">
+                <input name="link" placeholder="Social Link" class="input-field">
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeModal('memberModal')" class="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl">ยกเลิก</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-blue-700">บันทึก</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // 🟢 Config ของคุณ
+        const firebaseConfig = {
+            apiKey: "AIzaSyBhkmmMm93sbMmYHHSJprqfQutZIL5AYfM",
+            authDomain: "lpdatabase-ca2a0.firebaseapp.com",
+            databaseURL: "https://lpdatabase-ca2a0-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "lpdatabase-ca2a0",
+            storageBucket: "lpdatabase-ca2a0.firebasestorage.app",
+            messagingSenderId: "359410309752",
+            appId: "1:359410309752:web:4ac8bd58a4cf789aac6b8d",
+            measurementId: "G-YVX36D2Z90"
+                };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // ตัวแปรเก็บข้อมูลสำหรับเปิดดู/แก้ไข
+        let policiesData = {};
+
+        // --- AUTH & UI LOGIC ---
+        const ADMIN_PASSWORD = 'admin';
+
+        window.checkLogin = () => {
+            if(document.getElementById('passwordInput').value === ADMIN_PASSWORD) {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                initRealtimeListeners();
+            } else {
+                Swal.fire({icon:'error', title:'รหัสผ่านไม่ถูกต้อง', toast:true, position:'top', showConfirmButton:false, timer:2000});
+            }
+        }
+
+        window.toggleSidebar = () => {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebarOverlay').classList.toggle('hidden');
+        }
+
+        window.switchTab = (tab) => {
+            ['complaints','policies','activities','members'].forEach(t => {
+                document.getElementById('view-'+t).classList.add('hidden');
+                document.getElementById('btn-'+t).classList.remove('active');
+            });
+            document.getElementById('view-'+tab).classList.remove('hidden');
+            document.getElementById('btn-'+tab).classList.add('active');
+            if(window.innerWidth < 768) window.toggleSidebar();
+        }
+
+        // --- REALTIME LISTENERS ---
+        function initRealtimeListeners() {
+            // 1. Complaints
+            onValue(ref(db, 'complaints'), (snapshot) => {
+                const data = snapshot.val();
+                const tbody = document.getElementById('complaintTable');
+                document.getElementById('complaintLoading').classList.add('hidden');
+                tbody.innerHTML = '';
+                if(!data) { tbody.innerHTML = '<tr><td colspan="6" class="p-8 text-center text-slate-400">ไม่มีข้อมูลร้องเรียน</td></tr>'; return; }
+                
+                Object.keys(data).forEach(key => {
+                    const item = data[key];
+                    let badgeClass = item.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' : (item.status === 'In Progress' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700');
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="p-5 font-mono text-slate-500 text-xs">${new Date(item.timestamp).toLocaleDateString('th-TH')}</td>
+                            <td class="p-5 font-bold text-slate-800">${item.topic}</td>
+                            <td class="p-5"><span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-bold">${item.name || 'Anonymous'}</span></td>
+                            <td class="p-5"><button onclick="window.showDetail('${item.topic}', '${(item.detail || '').replace(/'/g, "\\'")}')" class="text-blue-600 hover:text-blue-800 font-bold text-xs flex items-center gap-1 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition"><i class="fas fa-eye"></i> อ่านเต็มๆ</button></td>
+                            <td class="p-5"><select onchange="window.updateStatus('${key}', this.value)" class="${badgeClass} px-3 py-1.5 rounded-lg text-xs font-bold border-none cursor-pointer outline-none"><option value="Pending" ${item.status==='Pending'?'selected':''}>Wait</option><option value="In Progress" ${item.status==='In Progress'?'selected':''}>Doing</option><option value="Done" ${item.status==='Done'?'selected':''}>Done</option></select></td>
+                            <td class="p-5 text-right"><button onclick="window.deleteItem('complaints/${key}')" class="w-8 h-8 rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition"><i class="fas fa-trash-alt"></i></button></td>
+                        </tr>`;
+                });
+            });
+
+            // 🟢 2. Policies (อัปเดตให้รองรับ Edit)
+            onValue(ref(db, 'policies'), (snapshot) => {
+                const data = snapshot.val();
+                policiesData = data || {}; // เก็บข้อมูลไว้ในตัวแปร Global เพื่อให้ดึงไป Edit ได้
+                const grid = document.getElementById('policyGrid');
+                grid.innerHTML = '';
+                if(!data) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400">Empty</div>'; return; }
+                
+                Object.keys(data).forEach(key => {
+                    const item = data[key];
+                    let color = item.status==='Completed'?'bg-green-500':(item.status==='In Progress'?'bg-blue-500':'bg-yellow-500');
+                    grid.innerHTML += `
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-lg transition relative group">
+                            <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition">
+                                <button onclick="window.openEditPolicy('${key}')" class="text-slate-300 hover:text-amber-500 transition"><i class="fas fa-edit"></i></button>
+                                <button onclick="window.deleteItem('policies/${key}')" class="text-slate-300 hover:text-red-500 transition"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded bg-slate-100 text-slate-500">${item.status}</span>
+                            <h3 class="font-bold text-lg text-slate-800 mt-2 mb-2">${item.title}</h3>
+                            <div class="h-24 overflow-y-auto mb-4 text-sm text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100">${item.detail}</div>
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden"><div class="h-full ${color}" style="width:${item.percent}%"></div></div>
+                                <span class="text-xs font-bold text-slate-600">${item.percent}%</span>
+                            </div>
+                        </div>`;
+                });
+            });
+
+            // 3. Activities
+            onValue(ref(db, 'activities'), (snapshot) => {
+                const data = snapshot.val();
+                const grid = document.getElementById('activityGrid');
+                grid.innerHTML = '';
+                if(!data) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400">Empty</div>'; return; }
+                Object.keys(data).forEach(key => {
+                    const item = data[key];
+                    grid.innerHTML += `
+                        <div class="bg-white rounded-2xl shadow-sm overflow-hidden group relative border border-slate-100">
+                            <button onclick="window.deleteItem('activities/${key}')" class="absolute top-2 right-2 bg-white/90 backdrop-blur rounded-full w-8 h-8 text-red-500 shadow opacity-0 group-hover:opacity-100 transition z-10 hover:bg-red-500 hover:text-white"><i class="fas fa-trash-alt"></i></button>
+                            <div class="h-40 bg-slate-100"><img src="${item.image}" class="w-full h-full object-cover"></div>
+                            <div class="p-4"><span class="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded uppercase">${item.category}</span><h3 class="font-bold text-slate-800 mt-2">${item.title}</h3></div>
+                        </div>`;
+                });
+            });
+
+            // 4. Members
+            onValue(ref(db, 'members'), (snapshot) => {
+                const data = snapshot.val();
+                const grid = document.getElementById('memberGrid');
+                grid.innerHTML = '';
+                if(!data) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400">Empty</div>'; return; }
+                Object.keys(data).forEach(key => {
+                    const item = data[key];
+                    grid.innerHTML += `
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 hover:shadow-md transition relative group text-center">
+                            <button onclick="window.deleteItem('members/${key}')" class="absolute top-2 right-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition"><i class="fas fa-trash-alt"></i></button>
+                            <img src="${item.image}" class="w-20 h-20 rounded-full object-cover mx-auto mb-3 shadow-md border-2 border-white" onerror="this.src='https://via.placeholder.com/150'">
+                            <h3 class="font-bold text-slate-800 text-sm">${item.name}</h3><p class="text-xs text-blue-500 font-bold uppercase mt-1">${item.role}</p>
+                        </div>`;
+                });
+            });
+
+            // 5. Maintenance
+            onValue(ref(db, 'maintenance'), (snapshot) => {
+                const status = snapshot.val();
+                document.getElementById('maintenanceToggle').checked = status;
+                document.getElementById('maintenanceStatusText').innerHTML = status ? '<span class="text-red-500 font-bold">⚠️ กำลังปิดปรับปรุง</span>' : '<span class="text-green-500 font-bold">✅ ปกติ (Online)</span>';
+            });
+        }
+
+        // --- GLOBAL ACTIONS ---
+
+        window.showDetail = (topic, detail) => {
+            Swal.fire({ title: topic, text: detail, confirmButtonText: 'ปิด', confirmButtonColor: '#334155', width: '600px', padding: '2em', backdrop: `rgba(15, 23, 42, 0.6)` });
+        }
+
+        window.updateStatus = (key, status) => {
+            update(ref(db, 'complaints/' + key), { status: status }).then(() => { Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 1500}).fire({icon: 'success', title: 'Saved'}); });
+        }
+
+        window.toggleMaintenance = (checkbox) => {
+            set(ref(db, 'maintenance'), checkbox.checked).then(() => { Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 2000}).fire({icon: 'success', title: 'สถานะถูกอัปเดตแล้ว'}); });
+        }
+
+        // 🟢 ฟังก์ชันเปิด Modal สร้างใหม่ (เคลียร์ค่า)
+        window.openCreatePolicy = () => {
+            document.getElementById('policyForm').reset();
+            document.getElementById('policyKey').value = ''; // เคลียร์ key
+            document.getElementById('policyModalTitle').innerText = 'เพิ่มนโยบายใหม่';
+            window.openModal('policyModal');
+        }
+
+        // 🟢 ฟังก์ชันเปิด Modal แก้ไข (ดึงค่ามาใส่)
+        window.openEditPolicy = (key) => {
+            const item = policiesData[key]; // ดึงข้อมูลจากตัวแปร Global
+            if(item) {
+                document.getElementById('policyKey').value = key; // ใส่ key ไว้ใน input ลับ
+                document.getElementById('policyTitle').value = item.title;
+                document.getElementById('policyDetail').value = item.detail;
+                document.getElementById('policyStatus').value = item.status;
+                document.getElementById('policyPercent').value = item.percent;
+                
+                document.getElementById('policyModalTitle').innerText = 'แก้ไขนโยบาย';
+                window.openModal('policyModal');
+            }
+        }
+
+        // 🟢 ฟังก์ชันบันทึกข้อมูล (ฉลาดขึ้น: รู้ว่าต้องสร้างใหม่ หรือ แก้ไข)
+        window.handleFirebaseSubmit = (e, collection, modalId) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const original = btn.innerText; btn.innerText = 'Saving...'; btn.disabled = true;
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            const key = data.key; // อ่านค่า Key จาก input ลับ
+            
+            delete data.key; // ลบ key ออกจาก data ที่จะบันทึก (เพราะ key อยู่ที่ path แล้ว)
+
+            let promise;
+            
+            if (key && key.trim() !== "") {
+                // กรณีมี Key = คือการแก้ไข (Update)
+                promise = update(ref(db, collection + '/' + key), data);
+            } else {
+                // กรณีไม่มี Key = คือการสร้างใหม่ (Create)
+                data.timestamp = Date.now();
+                promise = push(ref(db, collection), data);
+            }
+
+            promise
+                .then(() => {
+                    window.closeModal(modalId); e.target.reset();
+                    Swal.fire({icon:'success', title:'บันทึกสำเร็จ', showConfirmButton:false, timer:1500});
+                })
+                .catch((err) => Swal.fire({icon:'error', title: err.message}))
+                .finally(() => { btn.innerText = original; btn.disabled = false; });
+        }
+
+        window.deleteItem = (path) => {
+            Swal.fire({ title: 'ยืนยันการลบ?', text: "ข้อมูลจะหายไปถาวร", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'ลบเลย' }).then((result) => {
+                if (result.isConfirmed) { remove(ref(db, path)).then(() => Swal.fire({icon:'success', title:'ลบเรียบร้อย', showConfirmButton:false, timer:1000})); }
+            });
+        }
+
+        window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+        window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+
+    </script>
+</body>
+</html>
