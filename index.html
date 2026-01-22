@@ -25,11 +25,16 @@
                     animation: {
                         'fade-up': 'fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         'blob': 'blob 7s infinite',
+                        'popup': 'popup 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                     },
                     keyframes: {
                         fadeUp: {
                             '0%': { opacity: '0', transform: 'translateY(20px) scale(0.98)' },
                             '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+                        },
+                        popup: {
+                            '0%': { opacity: '0', transform: 'scale(0.9)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
                         },
                         blob: {
                             '0%': { transform: 'translate(0px, 0px) scale(1)' },
@@ -44,52 +49,19 @@
     </script>
 
     <style>
-        /* --- 1. Global Smooth Transition (หัวใจสำคัญของความสมูท) --- */
-        body, body * {
-            transition-property: background-color, border-color, color, fill, stroke, box-shadow;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 300ms;
-        }
-
-        /* --- 2. Advanced Glassmorphism --- */
-        .glass-nav { 
-            background: rgba(255, 255, 255, 0.7); 
-            backdrop-filter: blur(20px) saturate(180%); 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.3); 
-        }
-        .dark .glass-nav { 
-            background: rgba(11, 17, 32, 0.7); 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05); 
-        }
-
-        .glass-card { 
-            background: rgba(255, 255, 255, 0.6); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.5); 
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); 
-        }
-        .dark .glass-card { 
-            background: rgba(30, 41, 59, 0.4); 
-            border: 1px solid rgba(255, 255, 255, 0.05); 
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2); 
-        }
-
-        /* --- 3. Page Transitions --- */
+        body, body * { transition: background-color, border-color, color, fill, stroke, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 300ms; }
+        .glass-nav { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
+        .dark .glass-nav { background: rgba(11, 17, 32, 0.7); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); }
+        .dark .glass-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2); }
         .page-section { display: none; }
         .page-section.active { display: block; animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        /* --- 4. Interactive Elements --- */
         .nav-btn { position: relative; overflow: hidden; }
-        .nav-btn::after {
-            content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
-            background: #2563eb; transition: all 0.3s ease; transform: translateX(-50%);
-        }
+        .nav-btn::after { content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px; background: #2563eb; transition: all 0.3s ease; transform: translateX(-50%); }
         .nav-btn:hover::after { width: 60%; }
         .nav-btn.active { color: #2563eb; }
         .dark .nav-btn.active { color: #60a5fa; }
         .dark .nav-btn.active::after { background: #60a5fa; width: 60%; }
-        
-        /* Fix for transforms interfering with global transition */
         .transform-gpu { transform: translate3d(0,0,0); }
     </style>
 </head>
@@ -114,7 +86,8 @@
                 <button onclick="switchPage('home')" id="nav-home" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">หน้าหลัก</button>
                 <button onclick="switchPage('activities')" id="nav-activities" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">กิจกรรม</button>
                 <button onclick="switchPage('policy')" id="nav-policy" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">นโยบาย</button>
-                <button onclick="switchPage('team')" id="nav-team" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">ทีมงาน</button>
+                <button onclick="switchPage('qa')" id="nav-qa" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">ถาม-ตอบ</button>
+                <button onclick="switchPage('team')" id="nav-team" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">สมาชิก</button>
             </div>
             <div class="flex items-center gap-4">
                 <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center justify-center focus:outline-none shadow-sm backdrop-blur-sm border border-slate-200 dark:border-slate-700">
@@ -130,6 +103,7 @@
                 <button onclick="switchPage('home'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">หน้าหลัก</button>
                 <button onclick="switchPage('activities'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">กิจกรรม</button>
                 <button onclick="switchPage('policy'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">นโยบาย</button>
+                <button onclick="switchPage('qa'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">ถาม-ตอบ</button>
                 <button onclick="switchPage('team'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">คณะทำงาน</button>
                 <button onclick="switchPage('complaint'); toggleMobileMenu()" class="w-full text-center p-4 font-bold text-white bg-blue-600 rounded-xl mt-2 shadow-lg hover:bg-blue-700 transition-all">แจ้งปัญหา</button>
             </div>
@@ -195,6 +169,26 @@
             <div id="policyList" class="space-y-6 min-h-[300px]"></div>
         </div>
 
+        <div id="page-qa" class="page-section max-w-5xl mx-auto">
+            <div class="text-center mb-12 animate-fade-up">
+                <h2 class="text-4xl font-bold text-slate-900 dark:text-white mb-4">ถาม-ตอบ สภานักเรียน</h2>
+                <p class="text-slate-500 dark:text-slate-400">สงสัยอะไรถามได้เลย ทีมงานจะรีบมาตอบครับ</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+                <div class="md:col-span-1 glass-card p-6 rounded-[2rem] sticky top-24 animate-fade-up">
+                    <h3 class="font-bold text-xl mb-4 text-slate-800 dark:text-white"><i class="fas fa-question-circle mr-2 text-blue-500"></i>ตั้งคำถามใหม่</h3>
+                    <form id="qaForm" class="space-y-4">
+                        <textarea name="question" rows="4" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl outline-none focus:border-blue-500 transition dark:text-white" placeholder="พิมพ์คำถามของคุณ..."></textarea>
+                        <button type="submit" id="btnQaSubmit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-lg">ส่งคำถาม</button>
+                    </form>
+                </div>
+                
+                <div class="md:col-span-2 space-y-4" id="qaList">
+                    </div>
+            </div>
+        </div>
+
         <div id="page-team" class="page-section max-w-7xl mx-auto">
             <div class="text-center mb-12 animate-fade-up">
                 <h2 class="text-4xl font-bold text-slate-900 dark:text-white mb-4">คณะกรรมการนักเรียน</h2>
@@ -242,6 +236,19 @@
         </a>
     </footer>
 
+    <div id="announcement-popup" class="hidden fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl max-w-lg w-full overflow-hidden animate-popup relative">
+            <button onclick="document.getElementById('announcement-popup').classList.add('hidden')" class="absolute top-4 right-4 w-8 h-8 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600 transition"><i class="fas fa-times"></i></button>
+            <div id="anno-img-container" class="hidden h-48 bg-slate-200 dark:bg-slate-700"><img id="anno-img" src="" class="w-full h-full object-cover"></div>
+            <div class="p-8">
+                <span class="text-xs font-bold text-blue-500 uppercase tracking-widest mb-2 block">ประกาศจากสภา</span>
+                <h3 id="anno-title" class="text-2xl font-bold text-slate-900 dark:text-white mb-4"></h3>
+                <p id="anno-detail" class="text-slate-600 dark:text-slate-300 text-lg leading-relaxed"></p>
+                <button onclick="document.getElementById('announcement-popup').classList.add('hidden')" class="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-3 rounded-xl mt-6">รับทราบ</button>
+            </div>
+        </div>
+    </div>
+
     <div id="maintenance-screen" class="hidden fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-xl flex-col items-center justify-center text-center p-4 transition-all duration-500">
         <div class="bg-white/10 border border-white/10 p-10 md:p-14 rounded-[2.5rem] shadow-2xl max-w-lg w-full relative overflow-hidden backdrop-blur-md">
             <div class="mb-8 relative">
@@ -256,7 +263,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-        // ⚠️ Config เดิมของคุณ (ห้ามลืมเปลี่ยนถ้ามีอันใหม่)
+        // ⚠️ Config เดิมของคุณ
         const firebaseConfig = {
             apiKey: "AIzaSyBhkmmMm93sbMmYHHSJprqfQutZIL5AYfM",
             authDomain: "lpdatabase-ca2a0.firebaseapp.com",
@@ -266,7 +273,7 @@
             messagingSenderId: "359410309752",
             appId: "1:359410309752:web:4ac8bd58a4cf789aac6b8d",
             measurementId: "G-YVX36D2Z90"
-                };
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
@@ -299,7 +306,6 @@
             gallery.innerHTML = '';
             if(!data) { gallery.innerHTML = '<div class="col-span-full text-center py-20"><i class="fas fa-camera text-4xl text-slate-300 mb-4 block"></i><p class="text-slate-400">ยังไม่มีกิจกรรม</p></div>'; return; }
             
-            // ทำให้การ์ดโผล่มาทีละใบ (Stagger)
             let delay = 0;
             Object.values(data).forEach(item => {
                 let color = item.category==='SPORTS'?'bg-green-500':(item.category==='ACADEMIC'?'bg-blue-500':'bg-purple-500');
@@ -315,7 +321,7 @@
             });
         });
 
-        // 3. Policies
+        // 3. Policies (Update: Show Image)
         onValue(ref(db, 'policies'), (snapshot) => {
             const data = snapshot.val();
             const container = document.getElementById('policyList');
@@ -327,8 +333,12 @@
             Object.values(data).forEach(item => {
                 idx++;
                 let theme = item.status==='Completed'?{c:'bg-green-500',b:'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'}:(item.status==='In Progress'?{c:'bg-blue-500',b:'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'}:{c:'bg-yellow-400',b:'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'});
+                // Show Image if exists
+                let imgHtml = item.image ? `<img src="${item.image}" class="w-full h-48 object-cover rounded-2xl mb-6 shadow-md">` : '';
+
                 container.innerHTML += `
                     <div class="glass-card p-8 rounded-[2rem] hover:border-blue-400/30 transition-all duration-300 animate-fade-up" style="animation-delay: ${delay}s">
+                        ${imgHtml}
                         <div class="flex justify-between items-start mb-6 gap-4">
                             <div class="flex items-center gap-5">
                                 <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-700/50 flex items-center justify-center font-black text-2xl text-slate-300 dark:text-slate-500">${idx}</div>
@@ -374,7 +384,66 @@
             });
         });
 
-        // 5. Maintenance
+        // 5. Q&A (NEW)
+        onValue(ref(db, 'qa'), (snapshot) => {
+            const data = snapshot.val();
+            const container = document.getElementById('qaList');
+            container.innerHTML = '';
+            if(!data) { container.innerHTML='<p class="text-center text-slate-400 p-8">ยังไม่มีคำถาม เป็นคนแรกเลย!</p>'; return; }
+
+            // Convert to array and reverse to show newest first
+            const items = Object.values(data).reverse();
+            
+            items.forEach(item => {
+                let statusBadge = item.status === 'Answered' 
+                    ? '<span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded">ตอบแล้ว</span>'
+                    : '<span class="bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-1 rounded">รอคำตอบ</span>';
+                
+                let answerHtml = item.answer 
+                    ? `<div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700/50">
+                        <div class="flex gap-3">
+                            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">SC</div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800 dark:text-white">Admin Team</p>
+                                <p class="text-slate-600 dark:text-slate-300 text-sm mt-1">${item.answer}</p>
+                            </div>
+                        </div>
+                       </div>` 
+                    : '';
+
+                container.innerHTML += `
+                    <div class="glass-card p-6 rounded-3xl animate-fade-up">
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs text-slate-400 font-mono">${new Date(item.timestamp).toLocaleDateString('th-TH')}</span>
+                            ${statusBadge}
+                        </div>
+                        <h4 class="font-bold text-lg text-slate-800 dark:text-white mb-2">"${item.question}"</h4>
+                        ${answerHtml}
+                    </div>`;
+            });
+        });
+
+        // 6. Announcement Popup (NEW)
+        onValue(ref(db, 'announcement'), (snapshot) => {
+            const data = snapshot.val();
+            const popup = document.getElementById('announcement-popup');
+            if(data && data.active) {
+                document.getElementById('anno-title').innerText = data.title;
+                document.getElementById('anno-detail').innerText = data.detail;
+                if(data.image) {
+                    document.getElementById('anno-img-container').classList.remove('hidden');
+                    document.getElementById('anno-img').src = data.image;
+                } else {
+                    document.getElementById('anno-img-container').classList.add('hidden');
+                }
+                // Check if already seen in session (Optional logic, currently shows every reload for visibility)
+                popup.classList.remove('hidden');
+            } else {
+                popup.classList.add('hidden');
+            }
+        });
+
+        // 7. Maintenance
         onValue(ref(db, 'maintenance'), (snapshot) => {
             const isMaintenance = snapshot.val();
             const screen = document.getElementById('maintenance-screen');
@@ -406,6 +475,24 @@
 
             push(ref(db, 'complaints'), data)
                 .then(() => { Swal.fire({icon:'success', title:'เรียบร้อย', confirmButtonColor:'#0f172a'}); e.target.reset(); })
+                .catch(err => Swal.fire({icon:'error', title:'Error', text: err.message}))
+                .finally(() => { btn.innerHTML = original; btn.disabled = false; });
+        });
+
+        // Submit Question (NEW)
+        document.getElementById('qaForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnQaSubmit');
+            const original = btn.innerHTML;
+            btn.innerHTML = 'Sending...'; btn.disabled = true;
+
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.status = 'Pending';
+            data.timestamp = Date.now();
+
+            push(ref(db, 'qa'), data)
+                .then(() => { Swal.fire({icon:'success', title:'ส่งคำถามแล้ว', confirmButtonColor:'#0f172a'}); e.target.reset(); })
                 .catch(err => Swal.fire({icon:'error', title:'Error', text: err.message}))
                 .finally(() => { btn.innerHTML = original; btn.disabled = false; });
         });
