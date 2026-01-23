@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LP Student Council 2026 </title>
+    <title>LP Student Council 2026</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
@@ -23,19 +23,9 @@
                         dark: { 900: '#0b1120', 800: '#1e293b', 700: '#334155' } 
                     },
                     animation: {
-                        'fade-up': 'fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                        'blob': 'blob 7s infinite',
-                        'popup': 'popup 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'blob': 'blob 10s infinite',
                     },
                     keyframes: {
-                        fadeUp: {
-                            '0%': { opacity: '0', transform: 'translateY(20px) scale(0.98)' },
-                            '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
-                        },
-                        popup: {
-                            '0%': { opacity: '0', transform: 'scale(0.9)' },
-                            '100%': { opacity: '1', transform: 'scale(1)' },
-                        },
                         blob: {
                             '0%': { transform: 'translate(0px, 0px) scale(1)' },
                             '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
@@ -49,63 +39,95 @@
     </script>
 
     <style>
-        body, body * { transition: background-color, border-color, color, fill, stroke, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 300ms; }
-        .glass-nav { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px) saturate(180%); border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
-        .dark .glass-nav { background: rgba(11, 17, 32, 0.7); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        .glass-card { background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05); }
-        .dark .glass-card { background: rgba(30, 41, 59, 0.4); border: 1px solid rgba(255, 255, 255, 0.05); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2); }
-        .page-section { display: none; }
-        .page-section.active { display: block; animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        /* Global Smooth Transitions */
+        body, body * { 
+            transition-property: background-color, border-color, color, fill, stroke, transform, box-shadow, opacity, filter;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 200ms;
+        }
+        
+        .glass-nav { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(0,0,0,0.05); }
+        .dark .glass-nav { background: rgba(11, 17, 32, 0.8); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        .glass-card { 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255, 255, 255, 0.5); 
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05); 
+        }
+        .dark .glass-card { 
+            background: rgba(30, 41, 59, 0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.05); 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
+        }
+
+        /* ✅ แก้ไข: อนิเมชั่นการเปลี่ยนหน้า (ใส่ Keyframes ตรงนี้เลยเพื่อความชัวร์) */
+        @keyframes pageFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-section { 
+            display: none; 
+            /* ลบ opacity: 0 ออกเพื่อกันเหนียว ถ้าอนิเมชั่นไม่เล่น ข้อมูลยังต้องโชว์ */
+        }
+        
+        .page-section.active { 
+            display: block; 
+            animation: pageFadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
+        }
+        
         .nav-btn { position: relative; overflow: hidden; }
         .nav-btn::after { content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px; background: #2563eb; transition: all 0.3s ease; transform: translateX(-50%); }
         .nav-btn:hover::after { width: 60%; }
         .nav-btn.active { color: #2563eb; }
         .dark .nav-btn.active { color: #60a5fa; }
         .dark .nav-btn.active::after { background: #60a5fa; width: 60%; }
-        .transform-gpu { transform: translate3d(0,0,0); }
+        
+        .cursor-pointer:active { transform: scale(0.98); transition-duration: 100ms; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 dark:bg-dark-900 dark:text-slate-100 font-sans antialiased selection:bg-blue-500 selection:text-white overflow-x-hidden">
 
     <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-        <div class="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/30 dark:bg-blue-600/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] opacity-70 animate-blob"></div>
-        <div class="absolute top-0 right-1/4 w-96 h-96 bg-purple-400/30 dark:bg-purple-600/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] opacity-70 animate-blob animation-delay-2000"></div>
-        <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-pink-400/30 dark:bg-pink-600/20 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[80px] opacity-70 animate-blob animation-delay-4000"></div>
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 dark:bg-blue-600/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-70 animate-blob"></div>
+        <div class="absolute top-0 right-1/4 w-96 h-96 bg-purple-400/20 dark:bg-purple-600/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-70 animate-blob animation-delay-2000"></div>
+        <div class="absolute -bottom-32 left-1/3 w-96 h-96 bg-pink-400/20 dark:bg-pink-600/10 rounded-full mix-blend-multiply dark:mix-blend-screen filter blur-[100px] opacity-70 animate-blob animation-delay-4000"></div>
     </div>
 
     <nav class="fixed w-full z-50 glass-nav transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 h-20 flex justify-between items-center">
             <button onclick="switchPage('home')" class="flex items-center gap-3 group focus:outline-none transform transition hover:scale-105 duration-300">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-display font-bold text-xl shadow-lg shadow-blue-500/30">LP</div>
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white font-display font-bold text-xl shadow-lg">LP</div>
                 <div class="flex flex-col items-start">
                     <span class="font-display font-bold text-lg leading-none tracking-tight">COUNCIL</span>
                     <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 tracking-[0.2em] uppercase">Digital 2026</span>
                 </div>
             </button>
             <div class="hidden md:flex items-center gap-2 p-1.5 bg-white/50 dark:bg-slate-800/50 rounded-full border border-slate-200/50 dark:border-slate-700/50 backdrop-blur-md shadow-sm">
-                <button onclick="switchPage('home')" id="nav-home" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">หน้าหลัก</button>
-                <button onclick="switchPage('activities')" id="nav-activities" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">กิจกรรม</button>
-                <button onclick="switchPage('policy')" id="nav-policy" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">นโยบาย</button>
-                <button onclick="switchPage('qa')" id="nav-qa" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">ถาม-ตอบ</button>
-                <button onclick="switchPage('team')" id="nav-team" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">สมาชิก</button>
+                <button onclick="switchPage('home')" id="nav-home" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400">หน้าหลัก</button>
+                <button onclick="switchPage('activities')" id="nav-activities" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400">กิจกรรม</button>
+                <button onclick="switchPage('policy')" id="nav-policy" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400">นโยบาย</button>
+                <button onclick="switchPage('qa')" id="nav-qa" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400">ถาม-ตอบ</button>
+                <button onclick="switchPage('team')" id="nav-team" class="nav-btn px-6 py-2 text-sm font-bold text-slate-600 dark:text-slate-300 rounded-full hover:text-blue-600 dark:hover:text-blue-400">สมาชิก</button>
             </div>
             <div class="flex items-center gap-4">
-                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center justify-center focus:outline-none shadow-sm backdrop-blur-sm border border-slate-200 dark:border-slate-700">
+                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center justify-center focus:outline-none shadow-sm border border-slate-200 dark:border-slate-700">
                     <i id="theme-icon" class="fas fa-moon text-lg transition-transform duration-500 rotate-0"></i>
                 </button>
-                <button onclick="switchPage('complaint')" class="hidden md:block px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all duration-300">แจ้งปัญหา</button>
+                <button onclick="switchPage('complaint')" class="hidden md:block px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all">แจ้งปัญหา</button>
                 <button onclick="toggleMobileMenu()" class="md:hidden text-slate-800 dark:text-white p-2 text-xl focus:outline-none"><i class="fas fa-bars"></i></button>
             </div>
         </div>
         
         <div id="mobile-menu" class="hidden md:hidden absolute w-full px-4 top-24 z-40 transition-all duration-300 origin-top">
             <div class="glass-card rounded-2xl p-2 flex flex-col gap-1 shadow-2xl backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800">
-                <button onclick="switchPage('home'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">หน้าหลัก</button>
-                <button onclick="switchPage('activities'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">กิจกรรม</button>
-                <button onclick="switchPage('policy'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">นโยบาย</button>
-                <button onclick="switchPage('qa'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">ถาม-ตอบ</button>
-                <button onclick="switchPage('team'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">คณะทำงาน</button>
-                <button onclick="switchPage('complaint'); toggleMobileMenu()" class="w-full text-center p-4 font-bold text-white bg-blue-600 rounded-xl mt-2 shadow-lg hover:bg-blue-700 transition-all">แจ้งปัญหา</button>
+                <button onclick="switchPage('home'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">หน้าหลัก</button>
+                <button onclick="switchPage('activities'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">กิจกรรม</button>
+                <button onclick="switchPage('policy'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">นโยบาย</button>
+                <button onclick="switchPage('qa'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">ถาม-ตอบ</button>
+                <button onclick="switchPage('team'); toggleMobileMenu()" class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">คณะทำงาน</button>
+                <button onclick="switchPage('complaint'); toggleMobileMenu()" class="w-full text-center p-4 font-bold text-white bg-blue-600 rounded-xl mt-2 shadow-lg hover:bg-blue-700">แจ้งปัญหา</button>
             </div>
         </div>
     </nav>
@@ -114,46 +136,48 @@
         
         <div id="page-home" class="page-section active max-w-7xl mx-auto">
             <div class="text-center pt-8 pb-16">
-                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-8 shadow-sm backdrop-blur-sm animate-fade-up">
+                <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-8 shadow-sm backdrop-blur-sm">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> System Online
                 </div>
-                <h1 class="text-5xl md:text-8xl font-display font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight drop-shadow-sm animate-fade-up" style="animation-delay: 0.1s;">
+                <h1 class="text-5xl md:text-8xl font-display font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight drop-shadow-sm">
                     LP <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500 dark:from-blue-400 dark:to-cyan-300">StudentCouncil</span>
                 </h1>
-                <p class="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed animate-fade-up" style="animation-delay: 0.2s;">
+                <p class="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed">
                     ระบบสภานักเรียนยุคใหม่ โปร่งใส ตรวจสอบได้ รวดเร็ว<br class="hidden md:block">เชื่อมต่อทุกเสียงของเพื่อนนักเรียนสู่การเปลี่ยนแปลงจริง
                 </p>
-                <div class="flex flex-col sm:flex-row justify-center gap-4 animate-fade-up" style="animation-delay: 0.3s;">
-                    <button onclick="switchPage('policy')" class="px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-blue-500/20">ติดตามนโยบาย</button>
-                    <button onclick="switchPage('complaint')" class="px-8 py-4 glass-card text-slate-700 dark:text-slate-200 rounded-2xl font-bold hover:bg-white/80 dark:hover:bg-slate-700/80 hover:scale-105 active:scale-95 transition-all duration-300">แจ้งเรื่องร้องเรียน</button>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="switchPage('policy')" class="px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-bold hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-2xl">ติดตามนโยบาย</button>
+                    <button onclick="switchPage('complaint')" class="px-8 py-4 glass-card text-slate-700 dark:text-slate-200 rounded-2xl font-bold hover:bg-white/80 dark:hover:bg-slate-700/80 hover:scale-105 active:scale-95 transition-all">แจ้งเรื่องร้องเรียน</button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-up" style="animation-delay: 0.4s;">
-                <div class="glass-card p-8 rounded-[2rem] hover:-translate-y-2 transition-transform duration-500 hover:shadow-xl">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div onclick="switchPage('policy')" class="glass-card p-8 rounded-[2rem] hover:-translate-y-2 hover:shadow-xl cursor-pointer group transition-all duration-300">
                     <div class="flex justify-between items-start mb-4">
-                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">ความสำเร็จ</p><h3 class="text-5xl font-display font-bold text-slate-800 dark:text-white"><span id="statSuccess">0</span>%</h3></div>
-                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center text-green-600 dark:text-green-400 text-xl"><i class="fas fa-chart-pie"></i></div>
+                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 group-hover:text-blue-500 transition-colors">ความสำเร็จ</p><h3 class="text-5xl font-display font-bold text-slate-800 dark:text-white"><span id="statSuccess">0</span>%</h3></div>
+                        <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center text-green-600 dark:text-green-400 text-xl group-hover:scale-110 transition-transform"><i class="fas fa-chart-pie"></i></div>
                     </div>
                     <div class="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden"><div id="barSuccess" class="bg-gradient-to-r from-green-500 to-emerald-400 h-full w-0 transition-all duration-1000 ease-out"></div></div>
                 </div>
-                <div class="glass-card p-8 rounded-[2rem] hover:-translate-y-2 transition-transform duration-500 hover:shadow-xl">
+                
+                <div onclick="switchPage('team')" class="glass-card p-8 rounded-[2rem] hover:-translate-y-2 hover:shadow-xl cursor-pointer group transition-all duration-300">
                     <div class="flex justify-between items-start mb-4">
-                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">สมาชิกสภา</p><h3 class="text-5xl font-display font-bold text-slate-800 dark:text-white"><span id="statMember">0</span> <span class="text-lg font-display text-slate-400">คน</span></h3></div>
-                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 text-xl"><i class="fas fa-users"></i></div>
+                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 group-hover:text-blue-500 transition-colors">สมาชิกสภา</p><h3 class="text-5xl font-display font-bold text-slate-800 dark:text-white"><span id="statMember">0</span> <span class="text-lg font-display text-slate-400">คน</span></h3></div>
+                        <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 text-xl group-hover:scale-110 transition-transform"><i class="fas fa-users"></i></div>
                     </div>
                 </div>
-                <div class="glass-card p-8 rounded-[2rem] hover:-translate-y-2 transition-transform duration-500 hover:shadow-xl">
+                
+                <div onclick="switchPage('complaint')" class="glass-card p-8 rounded-[2rem] hover:-translate-y-2 hover:shadow-xl cursor-pointer group transition-all duration-300">
                     <div class="flex justify-between items-start mb-4">
-                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">เรื่องร้องเรียน</p><h3 class="text-5xl font-display font-bold text-slate-800 dark:text-white"><span id="statActive">0</span> <span class="text-lg text-slate-400">เรื่อง</span></h3></div>
-                        <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400 text-xl"><i class="fas fa-bolt"></i></div>
+                        <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 group-hover:text-blue-500 transition-colors">เรื่องร้องเรียน</p><h3 class="text-5xl font-display font-bold text-slate-800 dark:text-white"><span id="statActive">0</span> <span class="text-lg text-slate-400">เรื่อง</span></h3></div>
+                        <div class="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 dark:text-orange-400 text-xl group-hover:scale-110 transition-transform"><i class="fas fa-bolt"></i></div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div id="page-activities" class="page-section max-w-7xl mx-auto">
-            <div class="text-center mb-12 animate-fade-up">
+            <div class="text-center mb-12">
                 <h2 class="text-4xl font-bold text-slate-900 dark:text-white mb-4">กิจกรรมล่าสุด</h2>
                 <p class="text-slate-500 dark:text-slate-400">ประมวลภาพความประทับใจและการทำงาน</p>
             </div>
@@ -161,7 +185,7 @@
         </div>
 
         <div id="page-policy" class="page-section max-w-5xl mx-auto">
-            <div class="text-center mb-12 animate-fade-up">
+            <div class="text-center mb-12">
                 <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest border border-blue-200 dark:border-blue-800">Transparency</span>
                 <h2 class="text-4xl font-bold text-slate-900 dark:text-white mt-6 mb-4">ติดตามนโยบาย</h2>
                 <p class="text-slate-500 dark:text-slate-400">ความคืบหน้าโครงการต่างๆ อัปเดต Real-time</p>
@@ -170,26 +194,25 @@
         </div>
 
         <div id="page-qa" class="page-section max-w-5xl mx-auto">
-            <div class="text-center mb-12 animate-fade-up">
+            <div class="text-center mb-12">
                 <h2 class="text-4xl font-bold text-slate-900 dark:text-white mb-4">ถาม-ตอบ สภานักเรียน</h2>
                 <p class="text-slate-500 dark:text-slate-400">สงสัยอะไรถามได้เลย ทีมงานจะรีบมาตอบครับ</p>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                <div class="md:col-span-1 glass-card p-6 rounded-[2rem] sticky top-24 animate-fade-up">
+                <div class="md:col-span-1 glass-card p-6 rounded-[2rem] sticky top-24">
                     <h3 class="font-bold text-xl mb-4 text-slate-800 dark:text-white"><i class="fas fa-question-circle mr-2 text-blue-500"></i>ตั้งคำถามใหม่</h3>
                     <form id="qaForm" class="space-y-4">
                         <textarea name="question" rows="4" required class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl outline-none focus:border-blue-500 transition dark:text-white" placeholder="พิมพ์คำถามของคุณ..."></textarea>
                         <button type="submit" id="btnQaSubmit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition shadow-lg">ส่งคำถาม</button>
                     </form>
                 </div>
-                
                 <div class="md:col-span-2 space-y-4" id="qaList"></div>
             </div>
         </div>
 
         <div id="page-team" class="page-section max-w-7xl mx-auto">
-            <div class="text-center mb-12 animate-fade-up">
+            <div class="text-center mb-12">
                 <h2 class="text-4xl font-bold text-slate-900 dark:text-white mb-4">คณะกรรมการนักเรียน</h2>
                 <p class="text-slate-500 dark:text-slate-400">ทีมงานคุณภาพที่พร้อมรับใช้ทุกคน</p>
             </div>
@@ -197,7 +220,7 @@
         </div>
 
         <div id="page-complaint" class="page-section max-w-3xl mx-auto">
-            <div class="glass-card p-10 md:p-14 rounded-[2.5rem] relative overflow-hidden animate-fade-up">
+            <div class="glass-card p-10 md:p-14 rounded-[2.5rem] relative overflow-hidden">
                 <div class="text-center mb-10 relative">
                     <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-6 shadow-lg shadow-blue-500/30 text-white transform rotate-3"><i class="fas fa-paper-plane"></i></div>
                     <h2 class="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2">HOTLINE SERVICE</h2>
@@ -218,7 +241,7 @@
                         <label class="text-xs font-bold text-slate-400 uppercase ml-1">รายละเอียด (แนบสถานที่)</label>
                         <textarea name="detail" rows="5" required class="w-full bg-white/50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl outline-none focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 transition-all dark:text-white font-medium"></textarea>
                     </div>
-                    <button type="submit" id="btnSubmit" class="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-4 rounded-2xl text-lg hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1 active:translate-y-0 transition-all duration-300">ส่งข้อมูลทันที</button>
+                    <button type="submit" id="btnSubmit" class="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold py-4 rounded-2xl text-lg hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1 active:translate-y-0 transition-all">ส่งข้อมูลทันที</button>
                 </form>
             </div>
         </div>
@@ -226,11 +249,11 @@
 
     <footer class="bg-slate-50 dark:bg-dark-900/50 border-t border-slate-200 dark:border-slate-800 pt-16 pb-8 text-center transition-colors duration-300">
         <div class="flex justify-center gap-8 mb-8">
-            <a href="#" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all duration-300 hover:scale-110"><i class="fab fa-facebook text-lg"></i></a>
-            <a href="#" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-pink-600 hover:text-white dark:hover:bg-pink-600 dark:hover:text-white transition-all duration-300 hover:scale-110"><i class="fab fa-instagram text-lg"></i></a>
+            <a href="#" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-all hover:scale-110"><i class="fab fa-facebook text-lg"></i></a>
+            <a href="#" class="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-pink-600 hover:text-white dark:hover:bg-pink-600 dark:hover:text-white transition-all hover:scale-110"><i class="fab fa-instagram text-lg"></i></a>
         </div>
         <p class="text-slate-400 text-xs font-bold uppercase tracking-[0.2em] mb-6">&copy; 2026 Student Council Digital Platform</p>
-        <a href="admin.html" target="_blank" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-400 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-[10px] font-bold uppercase transition-all duration-300 hover:bg-blue-50 dark:hover:bg-blue-900/20">
+        <a href="admin.html" target="_blank" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-blue-400 text-slate-400 hover:text-blue-500 dark:hover:text-blue-400 text-[10px] font-bold uppercase transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20">
             <i class="fas fa-lock"></i> Staff Login
         </a>
     </footer>
@@ -251,30 +274,21 @@
     <div id="member-detail-modal" class="hidden fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
         <div class="glass-card max-w-5xl w-full rounded-[2.5rem] overflow-hidden relative animate-popup flex flex-col md:flex-row min-h-[600px] bg-white dark:bg-slate-900">
             <button onclick="closeMemberDetail()" class="absolute top-6 right-6 z-20 w-10 h-10 bg-black/10 dark:bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md hover:bg-red-500 hover:text-white transition text-slate-500 dark:text-white"><i class="fas fa-times"></i></button>
-            
             <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center relative z-10 order-2 md:order-1">
                 <span class="text-blue-500 font-bold tracking-widest uppercase text-sm mb-2 block">Team Member</span>
                 <h2 class="text-4xl md:text-5xl font-display font-black text-slate-800 dark:text-white mb-4 leading-tight" id="modal-name"></h2>
-                
                 <div class="text-xl font-medium text-slate-600 dark:text-slate-300 italic mb-8 border-l-4 border-blue-500 pl-4 py-1" id="modal-motto"></div>
-
                 <div class="space-y-6">
                     <div>
-                        <h3 class="flex items-center text-lg font-bold text-slate-900 dark:text-white mb-2">
-                            <span class="w-1.5 h-6 bg-blue-500 rounded-full mr-3"></span> ตำแหน่งปัจจุบัน
-                        </h3>
+                        <h3 class="flex items-center text-lg font-bold text-slate-900 dark:text-white mb-2"><span class="w-1.5 h-6 bg-blue-500 rounded-full mr-3"></span> ตำแหน่งปัจจุบัน</h3>
                         <p class="text-slate-600 dark:text-slate-400 pl-4" id="modal-role"></p>
                     </div>
-                    
                     <div id="modal-bio-container">
-                        <h3 class="flex items-center text-lg font-bold text-slate-900 dark:text-white mb-2">
-                            <span class="w-1.5 h-6 bg-orange-500 rounded-full mr-3"></span> ประวัติ / ผลงาน
-                        </h3>
+                        <h3 class="flex items-center text-lg font-bold text-slate-900 dark:text-white mb-2"><span class="w-1.5 h-6 bg-orange-500 rounded-full mr-3"></span> ประวัติ / ผลงาน</h3>
                         <div class="text-slate-600 dark:text-slate-400 pl-4 leading-relaxed whitespace-pre-line" id="modal-bio"></div>
                     </div>
                 </div>
             </div>
-
             <div class="w-full md:w-1/2 h-80 md:h-auto relative order-1 md:order-2">
                 <img id="modal-member-img" class="absolute inset-0 w-full h-full object-cover">
                 <div class="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent md:bg-gradient-to-l dark:from-slate-900"></div>
@@ -311,6 +325,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
+        // --- GLOBAL DATA STORE ---
         let membersData = {};
 
         // --- REALTIME DATA FETCHING ---
@@ -334,29 +349,28 @@
             document.getElementById('barSuccess').style.width = successRate + '%';
         });
 
-        // 2. Activities
+        // 2. Activities (Removed Stagger Delay for Smoothness)
         onValue(ref(db, 'activities'), (snapshot) => {
             const data = snapshot.val();
             const gallery = document.getElementById('activityGallery');
             gallery.innerHTML = '';
             if(!data) { gallery.innerHTML = '<div class="col-span-full text-center py-20"><i class="fas fa-camera text-4xl text-slate-300 mb-4 block"></i><p class="text-slate-400">ยังไม่มีกิจกรรม</p></div>'; return; }
             
-            let delay = 0;
             Object.values(data).forEach(item => {
                 let color = item.category==='SPORTS'?'bg-green-500':(item.category==='ACADEMIC'?'bg-blue-500':'bg-purple-500');
+                // Removed style="animation-delay" to fix stuttering
                 gallery.innerHTML += `
-                    <div class="glass-card h-72 rounded-[2rem] overflow-hidden group relative cursor-pointer hover:-translate-y-2 transition-all duration-500 hover:shadow-2xl animate-fade-up" style="animation-delay: ${delay}s">
+                    <div class="glass-card h-72 rounded-[2rem] overflow-hidden group relative cursor-pointer hover:-translate-y-2 transition-all duration-300 hover:shadow-2xl">
                         <img src="${item.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110 group-hover:rotate-1" onerror="this.src='https://via.placeholder.com/600x400?text=Activity'">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
                             <span class="${color} text-white text-[10px] font-bold px-3 py-1 rounded-full w-fit mb-2 uppercase shadow-lg border border-white/20 backdrop-blur-md">${item.category}</span>
                             <h3 class="text-white font-display font-bold text-xl leading-snug drop-shadow-md group-hover:text-blue-300 transition-colors">${item.title}</h3>
                         </div>
                     </div>`;
-                delay += 0.1;
             });
         });
 
-        // 3. Policies
+        // 3. Policies (Removed Stagger Delay)
         onValue(ref(db, 'policies'), (snapshot) => {
             const data = snapshot.val();
             const container = document.getElementById('policyList');
@@ -364,14 +378,13 @@
             if(!data) { container.innerHTML = '<div class="text-center py-20 text-slate-400">ยังไม่มีนโยบาย</div>'; return; }
             
             let idx = 0;
-            let delay = 0;
             Object.values(data).forEach(item => {
                 idx++;
                 let theme = item.status==='Completed'?{c:'bg-green-500',b:'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'}:(item.status==='In Progress'?{c:'bg-blue-500',b:'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'}:{c:'bg-yellow-400',b:'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'});
                 let imgHtml = item.image ? `<img src="${item.image}" class="w-full h-48 object-cover rounded-2xl mb-6 shadow-md">` : '';
 
                 container.innerHTML += `
-                    <div class="glass-card p-8 rounded-[2rem] hover:border-blue-400/30 transition-all duration-300 animate-fade-up" style="animation-delay: ${delay}s">
+                    <div class="glass-card p-8 rounded-[2rem] hover:border-blue-400/30 transition-all duration-300">
                         ${imgHtml}
                         <div class="flex justify-between items-start mb-6 gap-4">
                             <div class="flex items-center gap-5">
@@ -387,11 +400,10 @@
                         </div>
                     </div>`;
                 setTimeout(() => { if(document.getElementById(`prog-${idx}`)) document.getElementById(`prog-${idx}`).style.width = item.percent+'%'; }, 200+(idx*100));
-                delay += 0.1;
             });
         });
 
-        // 4. Team Members (UPDATE: ADD CLICK)
+        // 4. Team Members (Removed Stagger Delay)
         onValue(ref(db, 'members'), (snapshot) => {
             const data = snapshot.val();
             membersData = data || {};
@@ -399,12 +411,10 @@
             container.innerHTML = '';
             if(!data) { container.innerHTML='<div class="col-span-full text-center text-slate-400">ยังไม่มีสมาชิก</div>'; return; }
             
-            let delay = 0;
-            // Iterate using keys to capture ID
             Object.keys(data).forEach(key => {
                 const item = data[key];
                 container.innerHTML += `
-                    <div onclick="window.openMemberDetail('${key}')" class="glass-card rounded-[2.5rem] overflow-hidden group hover:-translate-y-2 transition-all duration-500 cursor-pointer animate-fade-up" style="animation-delay: ${delay}s">
+                    <div onclick="window.openMemberDetail('${key}')" class="glass-card rounded-[2.5rem] overflow-hidden group hover:-translate-y-2 transition-all duration-300 cursor-pointer">
                         <div class="h-80 bg-slate-200 dark:bg-slate-700 overflow-hidden relative">
                             <img src="${item.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110 group-hover:rotate-1" onerror="this.src='https://via.placeholder.com/400x500?text=Member'">
                             <div class="absolute bottom-0 left-0 w-full p-6 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent pt-24">
@@ -417,11 +427,10 @@
                             <div class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700/50 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white flex items-center justify-center transition-all duration-300 text-slate-600 dark:text-slate-300 shadow-sm"><i class="fas fa-arrow-right"></i></div>
                         </div>
                     </div>`;
-                delay += 0.1;
             });
         });
 
-        // 5. Q&A
+        // 5. Q&A (Removed Stagger Delay)
         onValue(ref(db, 'qa'), (snapshot) => {
             const data = snapshot.val();
             const container = document.getElementById('qaList');
@@ -448,7 +457,7 @@
                     : '';
 
                 container.innerHTML += `
-                    <div class="glass-card p-6 rounded-3xl animate-fade-up">
+                    <div class="glass-card p-6 rounded-3xl">
                         <div class="flex justify-between items-start mb-2">
                             <span class="text-xs text-slate-400 font-mono">${new Date(item.timestamp).toLocaleDateString('th-TH')}</span>
                             ${statusBadge}
@@ -534,11 +543,17 @@
 
         // Utils
         window.switchPage = (pageId) => {
+            // Hide all pages instantly
             document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+            
+            // Show new page
             document.getElementById('page-' + pageId).classList.add('active');
+            
+            // Update Nav
             document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
             const navBtn = document.getElementById('nav-' + pageId);
             if(navBtn) navBtn.classList.add('active');
+            
             window.scrollTo(0, 0);
         };
 
@@ -559,7 +574,7 @@
             menu.classList.toggle('hidden');
         };
         
-        // NEW MEMBER DETAIL FUNCTIONS
+        // MEMBER DETAIL FUNCTIONS
         window.openMemberDetail = (key) => {
             const item = membersData[key];
             if(item) {
@@ -588,7 +603,7 @@
 
                 document.getElementById('member-detail-modal').classList.remove('hidden');
                 document.getElementById('member-detail-modal').classList.add('flex');
-                document.body.style.overflow = 'hidden'; // Prevent scrolling
+                document.body.style.overflow = 'hidden'; 
             }
         }
 
