@@ -4,6 +4,7 @@ import { db } from "./config.js";
 let policiesData = {};
 let qaData = {};
 let membersData = {};
+let eventsData = {};
 let complaintsData = {}; // Promote to global used for filtering/export
 
 const ADMIN_PASSWORD = 'admin';
@@ -201,7 +202,7 @@ window.toggleSidebar = () => {
 };
 
 window.switchTab = (tab) => {
-    ['overview', 'complaints', 'policies', 'qa', 'announcement', 'activities', 'members'].forEach(t => {
+    ['overview', 'complaints', 'policies', 'qa', 'announcement', 'activities', 'members', 'calendar'].forEach(t => {
         const el = document.getElementById('view-' + t);
         const btn = document.getElementById('btn-' + t);
         if (el) el.classList.add('hidden');
@@ -244,6 +245,31 @@ if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.match
     document.documentElement.classList.add('dark');
     const btn = document.getElementById('darkModeBtn');
     if (btn) btn.innerHTML = '<i class="fas fa-sun w-5 text-center text-yellow-400"></i> <span>Light Mode</span>';
+}
+
+// --- OPEN NEWS DETAIL ---
+window.openNewsDetail = (key) => {
+    const item = window.newsData ? window.newsData[key] : null;
+    if (!item) return;
+
+    document.getElementById('news-modal-img').src = item.image;
+    document.getElementById('news-modal-cat').innerText = item.category;
+    document.getElementById('news-modal-title').innerText = item.title;
+
+    // Linkify and handle newlines
+    let detailHtml = item.detail || 'ไม่มีรายละเอียด';
+    // Handle both actual newlines and escaped \n strings from Firebase
+    detailHtml = detailHtml.replace(/\\n/g, '<br>');  // Escaped \n from Firebase
+    detailHtml = detailHtml.replace(/\n/g, '<br>');   // Actual newlines
+    detailHtml = detailHtml.replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/g, (match) => {
+        let url = match;
+        if (!url.startsWith('http')) url = 'https://' + url;
+        return `<a href="${url}" target="_blank" class="text-blue-500 hover:underline underline-offset-2">${match}</a>`;
+    });
+
+    document.getElementById('news-modal-detail').innerHTML = detailHtml;
+
+    document.getElementById('news-modal').classList.remove('hidden');
 }
 
 // --- REALTIME LISTENERS ---
@@ -455,7 +481,7 @@ function initRealtimeListeners() {
         document.getElementById('annoImage').value = data.image || '';
     });
 
-    // 5. Activities
+    // 5. Activities (News)
     const activityGrid = document.getElementById('activityGrid');
     if (activityGrid) showSkeleton('activityGrid', 6, 'grid');
 
@@ -466,22 +492,33 @@ function initRealtimeListeners() {
         grid.innerHTML = '';
         grid.style.opacity = '0';
 
-        if (!data) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">ว่างเปล่า</div>'; grid.style.opacity = '1'; return; }
-        Object.keys(data).forEach(key => {
+        if (!data) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">ไม่พบข่าวสาร</div>'; grid.style.opacity = '1'; return; }
+
+        // Sort by timestamp desc (assuming keys are somewhat chronological or we can sort if needed)
+        const keys = Object.keys(data).reverse();
+
+        keys.forEach(key => {
             const item = data[key];
+            // Encode item data for passing to function
+            const itemStr = encodeURIComponent(JSON.stringify(item));
+
             grid.innerHTML += `
-                <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm overflow-hidden group relative border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300">
-                    <button onclick="window.deleteItem('activities/${key}')" class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur rounded-xl w-10 h-10 text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition z-10 flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
+                <div onclick="window.openNewsDetail('${key}')" class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm overflow-hidden group relative border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 cursor-pointer">
+                    <button onclick="event.stopPropagation(); window.deleteItem('activities/${key}')" class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur rounded-xl w-10 h-10 text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition z-10 flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
                     <div class="h-48 bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
                         <img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
                         <span class="absolute bottom-3 left-3 text-[10px] font-bold bg-white/90 dark:bg-black/80 text-slate-900 dark:text-white px-2 py-1 rounded-lg uppercase tracking-wider backdrop-blur-sm shadow-sm">${item.category}</span>
                     </div>
                     <div class="p-5">
-                        <h3 class="font-bold text-slate-800 dark:text-white line-clamp-1 text-lg">${item.title}</h3>
+                        <h3 class="font-bold text-slate-800 dark:text-white line-clamp-2 text-lg mb-2 group-hover:text-blue-600 transition-colors">${item.title}</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">${item.detail || 'คลิกเพื่ออ่านรายละเอียด...'}</p>
                     </div>
                 </div>`;
         });
+
+        // Store data globally for access
+        window.newsData = data;
 
         setTimeout(() => {
             grid.style.opacity = '1';
@@ -535,6 +572,48 @@ function initRealtimeListeners() {
         const text = document.getElementById('maintenanceStatusText');
         text.innerText = status ? 'ON' : 'OFF';
         text.className = status ? 'ml-3 text-sm font-bold text-red-500' : 'ml-3 text-sm font-bold text-slate-400';
+    });
+
+    // 8. Events (Calendar)
+    onValue(ref(db, 'events'), (snapshot) => {
+        const data = snapshot.val();
+        eventsData = data || {};
+        const container = document.getElementById('adminEventList');
+        if (!container) return;
+
+        container.innerHTML = '';
+        if (!data) {
+            container.innerHTML = '<div class="text-center text-slate-400 py-4">No upcoming events</div>';
+            return;
+        }
+
+        // Sort by date
+        const sorted = Object.keys(data).sort((a, b) => data[a].date.localeCompare(data[b].date));
+
+        sorted.forEach(key => {
+            const item = data[key];
+            let colorClass = 'bg-blue-100 text-blue-600';
+            if (item.category === 'ACADEMIC') colorClass = 'bg-orange-100 text-orange-600';
+            else if (item.category === 'HOLIDAY') colorClass = 'bg-red-100 text-red-600';
+            else if (item.category === 'IMPORTANT') colorClass = 'bg-purple-100 text-purple-600';
+
+            container.innerHTML += `
+                <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-100 dark:border-white/5">
+                    <div class="flex items-center gap-4">
+                        <div class="text-center min-w-[3rem]">
+                            <div class="text-xs font-bold text-slate-400 uppercase">${new Date(item.date).toLocaleDateString('en-US', { month: 'short' })}</div>
+                            <div class="text-xl font-bold text-slate-800 dark:text-white">${new Date(item.date).getDate()}</div>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white text-sm">${item.title}</h4>
+                            <span class="${colorClass} text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">${item.category}</span>
+                            <span class="text-xs text-slate-400 ml-2"><i class="far fa-clock"></i> ${item.time || 'All Day'}</span>
+                        </div>
+                    </div>
+                    <button onclick="window.deleteItem('events/${key}')" class="w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
+                </div>
+            `;
+        });
     });
 }
 

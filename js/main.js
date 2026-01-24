@@ -2,6 +2,8 @@ import { ref, push, onValue, query, limitToLast, get, orderByChild, equalTo } fr
 import { db } from "./config.js";
 
 let membersData = {};
+let eventsData = {};
+let currentCalendarDate = new Date();
 
 // --- UTILITY FUNCTIONS ---
 
@@ -114,6 +116,209 @@ function validateInput(input, rules = {}) {
     return isValid;
 }
 
+// --- COMPLAINT FORM FUNCTIONS ---
+
+// Switch between submit and track modes
+window.switchComplaintMode = (mode) => {
+    const submitView = document.getElementById('complaint-submit-view');
+    const trackView = document.getElementById('complaint-track-view');
+    const btnSubmit = document.getElementById('btn-mode-submit');
+    const btnTrack = document.getElementById('btn-mode-track');
+
+    if (mode === 'submit') {
+        submitView.classList.remove('hidden');
+        trackView.classList.add('hidden');
+        btnSubmit.classList.add('bg-white', 'dark:bg-slate-700', 'text-blue-600', 'dark:text-blue-400', 'shadow-sm');
+        btnSubmit.classList.remove('text-slate-500', 'dark:text-slate-400');
+        btnTrack.classList.remove('bg-white', 'dark:bg-slate-700', 'text-blue-600', 'dark:text-blue-400', 'shadow-sm');
+        btnTrack.classList.add('text-slate-500', 'dark:text-slate-400');
+    } else {
+        submitView.classList.add('hidden');
+        trackView.classList.remove('hidden');
+        btnTrack.classList.add('bg-white', 'dark:bg-slate-700', 'text-blue-600', 'dark:text-blue-400', 'shadow-sm');
+        btnTrack.classList.remove('text-slate-500', 'dark:text-slate-400');
+        btnSubmit.classList.remove('bg-white', 'dark:bg-slate-700', 'text-blue-600', 'dark:text-blue-400', 'shadow-sm');
+        btnSubmit.classList.add('text-slate-500', 'dark:text-slate-400');
+    }
+}
+
+// Generate unique Ticket ID
+function generateTicketId() {
+    return 'TK-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
+}
+
+// Submit complaint form
+window.submitComplaint = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const btn = document.getElementById('btnSubmit');
+    const originalText = btn.innerHTML;
+
+    // Disable button and show loading
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>กำลังส่ง...';
+    btn.disabled = true;
+
+    const formData = new FormData(form);
+    const ticketId = generateTicketId();
+
+    const data = {
+        ticketId: ticketId,
+        topic: formData.get('topic'),
+        name: formData.get('name') || 'Anonymous',
+        detail: formData.get('detail'),
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    };
+
+    try {
+        await push(ref(db, 'complaints'), data);
+
+        Swal.fire({
+            icon: 'success',
+            title: 'ส่งเรื่องสำเร็จ!',
+            html: `<div class="text-left">
+                <p class="mb-2">เลข Ticket ของคุณคือ:</p>
+                <div class="flex items-center justify-center gap-2 p-3 bg-slate-100 dark:bg-slate-700 rounded-xl">
+                    <span class="font-mono font-bold text-xl">#${ticketId}</span>
+                    <button onclick="navigator.clipboard.writeText('#${ticketId}'); Swal.showValidationMessage('คัดลอกแล้ว!')" class="text-blue-500 hover:text-blue-600">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+                <p class="text-sm text-slate-500 mt-2">กรุณาเก็บเลขนี้ไว้เพื่อติดตามสถานะ</p>
+            </div>`,
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: '#3B82F6'
+        });
+
+        form.reset();
+    } catch (error) {
+        console.error('Error submitting complaint:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'เกิดข้อผิดพลาด',
+            text: 'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่',
+            confirmButtonColor: '#3B82F6'
+        });
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Check ticket status
+window.checkTicket = async () => {
+    const input = document.getElementById('trackInput');
+    const resultDiv = document.getElementById('trackResult');
+    let ticketId = input.value.trim().toUpperCase();
+
+    // Remove # prefix if present
+    if (ticketId.startsWith('#')) {
+        ticketId = ticketId.substring(1);
+    }
+
+    if (!ticketId) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'กรุณากรอก Ticket ID',
+            confirmButtonColor: '#3B82F6'
+        });
+        return;
+    }
+
+    try {
+        const snapshot = await get(query(ref(db, 'complaints'), orderByChild('ticketId'), equalTo(ticketId)));
+
+        if (!snapshot.exists()) {
+            resultDiv.innerHTML = `
+                <div class="glass-card p-6 rounded-2xl text-center border-l-4 border-red-500 mt-6">
+                    <i class="fas fa-times-circle text-4xl text-red-500 mb-3"></i>
+                    <h4 class="font-bold text-lg text-slate-800 dark:text-white">ไม่พบข้อมูล</h4>
+                    <p class="text-slate-500 text-sm">ไม่พบ Ticket ID นี้ในระบบ</p>
+                </div>`;
+            return;
+        }
+
+        const data = Object.values(snapshot.val())[0];
+        const statusConfig = {
+            'pending': { icon: 'fa-clock', color: 'yellow', text: 'รอดำเนินการ' },
+            'in-progress': { icon: 'fa-cog fa-spin', color: 'blue', text: 'กำลังดำเนินการ' },
+            'resolved': { icon: 'fa-check-circle', color: 'green', text: 'แก้ไขแล้ว' },
+            'rejected': { icon: 'fa-times-circle', color: 'red', text: 'ปฏิเสธ' }
+        };
+        const status = statusConfig[data.status] || statusConfig['pending'];
+
+        resultDiv.innerHTML = `
+            <div class="glass-card p-6 rounded-2xl border-l-4 border-${status.color}-500 mt-6 animate-fade-in">
+                <div class="flex items-center gap-4 mb-4">
+                    <div class="w-14 h-14 rounded-2xl bg-${status.color}-100 dark:bg-${status.color}-900/30 flex items-center justify-center">
+                        <i class="fas ${status.icon} text-2xl text-${status.color}-500"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg text-slate-800 dark:text-white">สถานะ: ${status.text}</h4>
+                        <p class="text-slate-400 text-sm font-mono">#${data.ticketId}</p>
+                    </div>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <p><span class="text-slate-400">หัวข้อ:</span> <span class="text-slate-700 dark:text-slate-300">${data.topic}</span></p>
+                    <p><span class="text-slate-400">ผู้แจ้ง:</span> <span class="text-slate-700 dark:text-slate-300">${data.name}</span></p>
+                    <p><span class="text-slate-400">วันที่แจ้ง:</span> <span class="text-slate-700 dark:text-slate-300">${new Date(data.createdAt).toLocaleDateString('th-TH')}</span></p>
+                </div>
+            </div>`;
+    } catch (error) {
+        console.error('Error checking ticket:', error);
+        resultDiv.innerHTML = `
+            <div class="glass-card p-6 rounded-2xl text-center border-l-4 border-red-500 mt-6">
+                <i class="fas fa-exclamation-triangle text-4xl text-red-500 mb-3"></i>
+                <h4 class="font-bold text-lg text-slate-800 dark:text-white">เกิดข้อผิดพลาด</h4>
+                <p class="text-slate-500 text-sm">ไม่สามารถตรวจสอบได้ กรุณาลองใหม่</p>
+            </div>`;
+    }
+}
+
+// --- OPEN NEWS DETAIL ---
+window.openNewsDetail = (key) => {
+    console.log('openNewsDetail called with key:', key);
+
+    const item = window.newsData ? window.newsData[key] : null;
+    if (!item) {
+        console.error('News item not found for key:', key);
+        return;
+    }
+
+    const modal = document.getElementById('news-modal');
+    if (!modal) {
+        console.error('news-modal element not found!');
+        // Fallback: show a simple alert
+        alert(item.title + '\n\n' + (item.detail || 'ไม่มีรายละเอียด'));
+        return;
+    }
+
+    const imgEl = document.getElementById('news-modal-img');
+    const catEl = document.getElementById('news-modal-cat');
+    const titleEl = document.getElementById('news-modal-title');
+    const detailEl = document.getElementById('news-modal-detail');
+
+    if (imgEl) imgEl.src = item.image;
+    if (catEl) catEl.innerText = item.category;
+    if (titleEl) titleEl.innerText = item.title;
+
+    // Convert newlines to <br> and URLs to links
+    let detailHtml = item.detail || 'ไม่มีรายละเอียด';
+    // Handle both actual newlines and escaped \n strings from Firebase
+    detailHtml = detailHtml.replace(/\\n/g, '<br>');  // Escaped \n from Firebase
+    detailHtml = detailHtml.replace(/\n/g, '<br>');   // Actual newlines
+    detailHtml = detailHtml.replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/g, (match) => {
+        let url = match;
+        if (!url.startsWith('http')) url = 'https://' + url;
+        return `<a href="${url}" target="_blank" class="text-blue-500 hover:underline underline-offset-2">${match}</a>`;
+    });
+
+    if (detailEl) detailEl.innerHTML = detailHtml;
+
+    modal.classList.remove('hidden');
+    console.log('News modal opened successfully');
+}
+
 // --- REALTIME DATA (OPTIMIZED) ---
 
 // 1. Stats
@@ -135,43 +340,16 @@ onValue(ref(db), (snapshot) => {
         animateValue("statActive", parseInt(document.getElementById("statActive").innerText), activeComplaints, 1000);
         document.getElementById('barSuccess').style.width = successRate + '%';
     }
-});
 
-// 2. Activities (ดึงแค่ 20 อันล่าสุด เพื่อไม่ให้เครื่องค้าง)
-const activityGallery = document.getElementById('activityGallery');
-if (activityGallery) showSkeleton('activityGallery', 6, 'card');
-
-onValue(query(ref(db, 'activities'), limitToLast(20)), (snapshot) => {
-    const data = snapshot.val();
-    const gallery = document.getElementById('activityGallery');
-    if (!gallery) return;
-
-    if (!data) {
-        gallery.innerHTML = '<div class="col-span-full text-center py-20 opacity-50"><i class="fas fa-images text-6xl text-slate-300 mb-4 block"></i><p class="text-slate-400">ยังไม่มีกิจกรรม</p></div>';
-        return;
+    // Update hero card stats too
+    if (document.getElementById("heroStatSuccess")) {
+        document.getElementById("heroStatSuccess").innerText = successRate;
+        document.getElementById("heroStatMember").innerText = memberCount;
+        document.getElementById("heroStatActive").innerText = activeComplaints;
     }
-
-    // Clear skeleton and add fade-in effect
-    gallery.innerHTML = '';
-    gallery.style.opacity = '0';
-    setTimeout(() => {
-        Object.values(data).reverse().forEach(item => {
-            let color = item.category === 'SPORTS' ? 'bg-green-500' : (item.category === 'ACADEMIC' ? 'bg-blue-500' : 'bg-purple-500');
-            gallery.innerHTML += `
-                <div class="glass-card h-80 rounded-[2.5rem] overflow-hidden group relative cursor-pointer hover:shadow-2xl transition-all duration-500 border-0 card-lift reveal">
-                    <img src="${item.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" onerror="this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22400%22%20viewBox%3D%220%200%20600%20400%22%3E%3Crect%20fill%3D%22%23cbd5e1%22%20width%3D%22600%22%20height%3D%22400%22%2F%3E%3Ctext%20fill%3D%22%2364748b%22%20font-family%3D%22sans-serif%22%20font-size%3D%2230%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E'">
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent flex flex-col justify-end p-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                        <span class="${color} text-white text-[10px] font-bold px-3 py-1 rounded-full w-fit mb-3 uppercase tracking-wider shadow-lg">${item.category}</span>
-                        <h3 class="text-white font-display font-bold text-2xl leading-snug drop-shadow-md group-hover:text-blue-300 transition-colors">${item.title}</h3>
-                    </div>
-                </div>`;
-        });
-        gallery.style.opacity = '1';
-        gallery.style.transition = 'opacity 0.5s ease-in-out';
-    }, 100);
 });
 
-// 3. Policies
+// 2. Policies
 const policyList = document.getElementById('policyList');
 if (policyList) showSkeleton('policyList', 3, 'policy');
 
@@ -219,7 +397,7 @@ onValue(ref(db, 'policies'), (snapshot) => {
     container.style.transition = 'opacity 0.5s ease-in-out';
 });
 
-// 4. Members
+// 3. Members
 const teamGrid = document.getElementById('teamGrid');
 if (teamGrid) showSkeleton('teamGrid', 6, 'card');
 
@@ -252,6 +430,50 @@ onValue(ref(db, 'members'), (snapshot) => {
 
     container.style.opacity = '1';
     container.style.transition = 'opacity 0.5s ease-in-out';
+});
+
+// 4. Activities (News)
+const activityGallery = document.getElementById('activityGallery');
+if (activityGallery) showSkeleton('activityGallery', 6, 'grid');
+
+onValue(ref(db, 'activities'), (snapshot) => {
+    const data = snapshot.val();
+    const grid = document.getElementById('activityGallery');
+    if (!grid) return;
+
+    // Store globally for click handler (backup)
+    window.newsData = data || {};
+
+    grid.innerHTML = '';
+    grid.style.opacity = '0';
+
+    if (!data) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">ไม่พบข่าวสาร</div>'; grid.style.opacity = '1'; return; }
+
+    // Convert to array and sort
+    const items = Object.entries(data).map(([key, value]) => ({ key, ...value })).reverse();
+
+    items.forEach(item => {
+        grid.innerHTML += `
+            <div onclick="window.openNewsDetail('${item.key}')" class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm overflow-hidden group relative border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 cursor-pointer">
+                <div class="h-48 bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
+                    <img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22400%22%20viewBox%3D%220%200%20600%20400%22%3E%3Crect%20fill%3D%22%23cbd5e1%22%20width%3D%22600%22%20height%3D%22400%22%2F%3E%3Ctext%20fill%3D%22%2364748b%22%20font-family%3D%22sans-serif%22%20font-size%3D%2230%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E'">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                    <span class="absolute bottom-3 left-3 text-[10px] font-bold bg-white/90 dark:bg-black/80 text-slate-900 dark:text-white px-2 py-1 rounded-lg uppercase tracking-wider backdrop-blur-sm shadow-sm">${item.category}</span>
+                </div>
+                <div class="p-5">
+                    <h3 class="font-bold text-slate-800 dark:text-white line-clamp-2 text-lg mb-2 group-hover:text-blue-600 transition-colors">${item.title}</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">${item.detail || '...'}</p>
+                    <button onclick="event.stopPropagation(); window.openNewsDetail('${item.key}')" class="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
+                        อ่านรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>`;
+    });
+
+    setTimeout(() => {
+        grid.style.opacity = '1';
+        grid.style.transition = 'opacity 0.3s ease-in-out';
+    }, 50);
 });
 
 // 5. Q&A (ดึง 50 อันล่าสุด)
@@ -301,6 +523,149 @@ onValue(query(ref(db, 'qa'), limitToLast(50)), (snapshot) => {
 
     container.style.opacity = '1';
     container.style.transition = 'opacity 0.5s ease-in-out';
+    container.style.opacity = '1';
+    container.style.transition = 'opacity 0.5s ease-in-out';
+});
+
+// 6. Calendar Logic
+function renderCalendar() {
+    const grid = document.getElementById('calendarGrid');
+    const header = document.getElementById('calendarMonthYear');
+    if (!grid || !header) return;
+
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+
+    // Thai Month Names
+    const monthNames = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+    header.innerText = `${monthNames[month]} ${year + 543}`;
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    grid.innerHTML = '';
+
+    // Empty cells for previous month
+    for (let i = 0; i < firstDay; i++) {
+        grid.innerHTML += `<div class="calendar-day empty"></div>`;
+    }
+
+    // Days
+    const today = new Date();
+    const isCurrentMonth = today.getMonth() === month && today.getFullYear() === year;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        let className = 'calendar-day';
+        if (isCurrentMonth && day === today.getDate()) className += ' today';
+
+        let dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        // Find events for this day
+        let daysEvents = [];
+        if (eventsData) {
+            daysEvents = Object.values(eventsData).filter(e => e.date === dateStr);
+        }
+
+        let dotsHtml = '<div class="event-dots">';
+        daysEvents.slice(0, 3).forEach(e => {
+            let colorClass = 'bg-blue-500'; // Default
+            if (e.category === 'ACADEMIC') colorClass = 'bg-orange-500';
+            else if (e.category === 'HOLIDAY') colorClass = 'bg-red-500';
+            else if (e.category === 'IMPORTANT') colorClass = 'bg-purple-500';
+
+            dotsHtml += `<div class="event-dot ${colorClass}"></div>`;
+        });
+        dotsHtml += '</div>';
+
+        grid.innerHTML += `
+            <div class="${className}" onclick="window.openDayEvents('${dateStr}')">
+                <span class="text-slate-700 dark:text-slate-300 font-bold z-10">${day}</span>
+                ${dotsHtml}
+            </div>
+        `;
+    }
+}
+
+window.changeMonth = (delta) => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + delta);
+    renderCalendar();
+};
+
+window.openDayEvents = (dateStr) => {
+    // Show events for this day in sidebar or modal
+    // For now, let's just use the modal for specific events if there are any
+    const events = Object.values(eventsData).filter(e => e.date === dateStr);
+
+    if (events.length === 0) {
+        showToast('ไม่มีกิจกรรมในวันนี้', 'info');
+        return;
+    }
+
+    if (events.length === 1) {
+        window.openEventDetail(events[0]);
+    } else {
+        // If multiple events, ideally show a list, but for simplicity open the first one
+        // Or we could implement a small list modal
+        window.openEventDetail(events[0]);
+    }
+};
+
+window.openEventDetail = (event) => {
+    document.getElementById('event-modal-title').innerText = event.title;
+    document.getElementById('event-modal-time').innerText = event.time || 'All Day';
+    document.getElementById('event-modal-loc').innerText = event.location || '-';
+    document.getElementById('event-modal-desc').innerText = event.description || '-';
+
+    let badge = document.getElementById('event-modal-badge');
+    badge.innerText = event.category;
+    badge.className = 'inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest mb-3 ';
+
+    if (event.category === 'ACADEMIC') badge.classList.add('bg-orange-100', 'text-orange-600');
+    else if (event.category === 'HOLIDAY') badge.classList.add('bg-red-100', 'text-red-600');
+    else if (event.category === 'IMPORTANT') badge.classList.add('bg-purple-100', 'text-purple-600');
+    else badge.classList.add('bg-blue-100', 'text-blue-600');
+
+    document.getElementById('event-modal').classList.remove('hidden');
+};
+
+// Fetch Events
+onValue(ref(db, 'events'), (snapshot) => {
+    eventsData = snapshot.val() || {};
+    renderCalendar();
+
+    // Update Upcoming List (Next 3 events)
+    const upcomingContainer = document.getElementById('upcomingList');
+    if (!upcomingContainer) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const upcomingEvents = Object.values(eventsData)
+        .filter(e => e.date >= todayStr)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 4);
+
+    upcomingContainer.innerHTML = '';
+    if (upcomingEvents.length === 0) {
+        upcomingContainer.innerHTML = '<p class="text-white/70 text-sm">ไม่มีกิจกรรมเร็วๆ นี้</p>';
+    } else {
+        upcomingEvents.forEach(e => {
+            let dateObj = new Date(e.date);
+            let day = dateObj.getDate();
+            let month = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."][dateObj.getMonth()];
+
+            upcomingContainer.innerHTML += `
+                <div class="bg-white/10 backdrop-blur-md p-3 rounded-xl flex items-center gap-4 cursor-pointer hover:bg-white/20 transition" onclick='window.openEventDetail(${JSON.stringify(e)})'>
+                    <div class="bg-white text-blue-600 rounded-lg p-2 min-w-[50px] text-center">
+                        <div class="text-xs font-bold uppercase">${month}</div>
+                        <div class="text-xl font-bold leading-none">${day}</div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm leading-tight mb-1 text-white">${e.title}</h4>
+                        <p class="text-xs text-blue-100">${e.category}</p>
+                    </div>
+                </div>
+            `;
+        });
+    }
 });
 
 // 6. Announcement (Popup Image Logic)
@@ -557,6 +922,139 @@ window.submitQa = (e) => {
         });
 };
 
+// --- THEME & MENU TOGGLE FUNCTIONS ---
+
+// Toggle Dark/Light Theme
+window.toggleTheme = () => {
+    const html = document.documentElement;
+    const icon = document.getElementById('theme-icon');
+
+    if (html.classList.contains('dark')) {
+        html.classList.remove('dark');
+        localStorage.theme = 'light';
+        if (icon) {
+            icon.className = 'fas fa-moon text-lg transition-transform duration-500';
+        }
+    } else {
+        html.classList.add('dark');
+        localStorage.theme = 'dark';
+        if (icon) {
+            icon.className = 'fas fa-sun text-lg transition-transform duration-500';
+        }
+    }
+}
+
+// Toggle Mobile Menu
+window.toggleMobileMenu = () => {
+    const menu = document.getElementById('mobile-menu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
+// --- Q&A SUBMIT FUNCTION ---
+
+// Thai Profanity Filter
+const BANNED_WORDS = [
+    'ควย', 'หี', 'เหี้ย', 'สัตว์', 'แม่ง', 'มึง', 'กู', 'เย็ด', 'สันดาน', 'อีดอก',
+    'อีสัตว์', 'ไอ้บ้า', 'อีบ้า', 'ชาติหมา', 'ส้นตีน', 'อีควาย', 'ไอ้ควาย', 'หน้าหี',
+    'เงี่ยน', 'อมควย', 'fuck', 'shit', 'bitch', 'dick', 'pussy', 'asshole'
+];
+
+function containsProfanity(text) {
+    const lowerText = text.toLowerCase();
+    return BANNED_WORDS.some(word => lowerText.includes(word.toLowerCase()));
+}
+
+// Cooldown Check (1 hour = 3600000 ms)
+const QA_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
+function checkQaCooldown() {
+    const lastSubmit = localStorage.getItem('lastQaSubmit');
+    if (!lastSubmit) return { canSubmit: true };
+
+    const elapsed = Date.now() - parseInt(lastSubmit);
+    const remaining = QA_COOLDOWN_MS - elapsed;
+
+    if (remaining > 0) {
+        const minutes = Math.ceil(remaining / 60000);
+        return { canSubmit: false, remainingMinutes: minutes };
+    }
+    return { canSubmit: true };
+}
+
+window.submitQa = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const btn = document.getElementById('btnQaSubmit');
+    const originalText = btn.innerHTML;
+
+    const formData = new FormData(form);
+    const question = formData.get('question');
+
+    // Validate question
+    if (!question || question.trim() === '') {
+        showToast('กรุณากรอกคำถาม', 'error');
+        return;
+    }
+
+    // Check profanity
+    if (containsProfanity(question)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'ไม่อนุญาต',
+            text: 'คำถามของคุณมีคำไม่เหมาะสม กรุณาแก้ไขก่อนส่ง',
+            confirmButtonColor: '#3B82F6'
+        });
+        return;
+    }
+
+    // Check cooldown
+    const cooldown = checkQaCooldown();
+    if (!cooldown.canSubmit) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'กรุณารอสักครู่',
+            html: `คุณสามารถส่งคำถามใหม่ได้ในอีก <strong>${cooldown.remainingMinutes} นาที</strong><br><small class="text-slate-500">ระบบจำกัดการส่ง 1 คำถาม/ชั่วโมง เพื่อป้องกัน Spam</small>`,
+            confirmButtonColor: '#3B82F6'
+        });
+        return;
+    }
+
+    // Loading state
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>กำลังส่ง...';
+    btn.disabled = true;
+
+    const data = {
+        question: question.trim(),
+        answer: '',
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    };
+
+    try {
+        await push(ref(db, 'qa'), data);
+
+        // Set cooldown timestamp
+        localStorage.setItem('lastQaSubmit', Date.now().toString());
+
+        Swal.fire({
+            icon: 'success',
+            title: 'ส่งคำถามสำเร็จ!',
+            text: 'คำถามของคุณถูกส่งแล้ว รอคำตอบจากสภานักเรียน',
+            confirmButtonColor: '#3B82F6'
+        });
+        form.reset();
+    } catch (error) {
+        console.error('Error submitting Q&A:', error);
+        showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+
 // Enhanced switchPage with transition
 window.switchPage = (pageId) => {
     const currentResults = document.querySelectorAll('.page-section.active');
@@ -729,6 +1227,7 @@ if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.match
     document.getElementById('theme-icon').className = 'fas fa-sun text-lg transition-transform duration-500';
 }
 window.addEventListener('load', () => {
+    window.scrollTo(0, 0); // Scroll to top on page load/refresh
     window.switchPage('home');
     initScrollReveal();
 });

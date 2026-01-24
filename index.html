@@ -31,6 +31,13 @@
 
 <body
     class="bg-slate-50 text-slate-800 dark:bg-dark-900 dark:text-slate-200 font-sans antialiased overflow-x-hidden transition-colors duration-500">
+    <!-- Force scroll to top on page load/refresh -->
+    <script>
+        if ('scrollRestoration' in history) {
+            history.scrollRestoration = 'manual';
+        }
+        window.scrollTo(0, 0);
+    </script>
 
     <div class="fixed inset-0 overflow-hidden pointer-events-none -z-10">
         <div
@@ -61,9 +68,11 @@
                 <button onclick="switchPage('home')" id="nav-home"
                     class="nav-btn px-5 py-2 text-sm rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">หน้าหลัก</button>
                 <button onclick="switchPage('activities')" id="nav-activities"
-                    class="nav-btn px-5 py-2 text-sm rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">กิจกรรม</button>
+                    class="nav-btn px-5 py-2 text-sm rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">ข่าวสาร</button>
                 <button onclick="switchPage('policy')" id="nav-policy"
                     class="nav-btn px-5 py-2 text-sm rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">นโยบาย</button>
+                <button onclick="switchPage('calendar')" id="nav-calendar"
+                    class="nav-btn px-5 py-2 text-sm rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">ปฏิทิน</button>
                 <button onclick="switchPage('qa')" id="nav-qa"
                     class="nav-btn px-5 py-2 text-sm rounded-full hover:text-blue-600 dark:hover:text-blue-400 transition-colors">ถาม-ตอบ</button>
                 <button onclick="switchPage('team')" id="nav-team"
@@ -88,9 +97,11 @@
                 <button onclick="switchPage('home'); toggleMobileMenu()"
                     class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">หน้าหลัก</button>
                 <button onclick="switchPage('activities'); toggleMobileMenu()"
-                    class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">กิจกรรม</button>
+                    class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">ข่าวสาร</button>
                 <button onclick="switchPage('policy'); toggleMobileMenu()"
                     class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">นโยบาย</button>
+                <button onclick="switchPage('calendar'); toggleMobileMenu()"
+                    class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">ปฏิทินกิจกรรม</button>
                 <button onclick="switchPage('qa'); toggleMobileMenu()"
                     class="w-full text-left p-4 font-bold text-slate-600 dark:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800">ถาม-ตอบ</button>
                 <button onclick="switchPage('team'); toggleMobileMenu()"
@@ -101,96 +112,199 @@
         </div>
     </nav>
 
-    <main class="pt-32 pb-20 px-4 min-h-screen relative">
-        <div id="page-home" class="page-section active max-w-7xl mx-auto">
-            <div class="text-center pt-8 pb-20">
-                <div
-                    class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-widest mb-8 shadow-sm backdrop-blur-md animate-float">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> System Online
+    <main class="pt-0 pb-20 min-h-screen relative">
+        <div id="page-home" class="page-section active">
+            <!-- Hero Section with Background -->
+            <section class="relative z-20 min-h-screen flex items-center">
+                <!-- Background Image with Overlay -->
+                <div class="absolute inset-0 z-0 overflow-hidden">
+                    <div
+                        class="absolute inset-0 bg-gradient-to-r from-blue-900/95 via-blue-800/85 to-transparent dark:from-slate-900/95 dark:via-slate-800/85 z-10">
+                    </div>
+                    <img src="https://images.unsplash.com/photo-1562774053-701939374585?w=1920&q=80"
+                        alt="School Background" class="w-full h-full object-cover">
                 </div>
-                <h1
-                    class="text-6xl md:text-8xl font-display font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight drop-shadow-sm reveal">
-                    LP <span class="text-gradient">StudentCouncil</span></h1>
-                <p
-                    class="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light leading-relaxed reveal delay-100">
-                    ระบบสภานักเรียนยุคใหม่ โปร่งใส ตรวจสอบได้ รวดเร็ว<br
-                        class="hidden md:block">เชื่อมต่อทุกเสียงของเพื่อนนักเรียนสู่การเปลี่ยนแปลงจริง</p>
-                <div class="flex flex-col sm:flex-row justify-center gap-5 reveal delay-200">
-                    <button onclick="switchPage('policy')"
-                        class="group px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center gap-2">ติดตามนโยบาย
-                        <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i></button>
-                    <button onclick="switchPage('complaint')"
-                        class="px-8 py-4 glass-card text-slate-700 dark:text-slate-200 rounded-full font-bold hover:bg-white/80 dark:hover:bg-slate-700/80 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"><i
-                            class="fas fa-exclamation-circle text-blue-500"></i> แจ้งเรื่องร้องเรียน</button>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 px-4">
-                <div onclick="switchPage('policy')"
-                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-100">
-                    <div class="flex justify-between items-start mb-6 relative">
-                        <div>
-                            <p
-                                class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-green-500 transition-colors">
-                                ความสำเร็จ</p>
-                            <h3 class="text-5xl font-display font-black text-slate-800 dark:text-white"><span
-                                    id="statSuccess">0</span>%</h3>
+
+                <!-- Hero Content -->
+                <div class="relative z-20 w-full max-w-7xl mx-auto px-6 py-20 lg:py-32">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+
+                        <!-- Left: Text Content -->
+                        <div class="text-white space-y-6 reveal">
+                            <div
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm text-white/90 text-xs font-bold uppercase tracking-widest">
+                                <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                                ผู้ลงสมัครเลือกตั้งสภานักเรียน
+                            </div>
+
+                            <div>
+                                <p class="text-blue-300 dark:text-blue-400 text-lg md:text-xl font-medium mb-2">พรรค</p>
+                                <h1 class="text-6xl md:text-7xl lg:text-8xl font-display font-black leading-none mb-4">
+                                    LP
+                                    <span
+                                        class="block text-gradient bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-300 bg-clip-text text-transparent">StudentCouncil</span>
+                                </h1>
+                            </div>
+
+                            <p class="text-xl md:text-2xl text-blue-200 dark:text-blue-300 font-medium">
+                                เชื่อมต่อทุกเสียง สู่การเปลี่ยนแปลง
+                            </p>
+                            <p class="text-white/70 text-base md:text-lg">
+                                ระบบสภานักเรียนยุคใหม่ โปร่งใส ตรวจสอบได้
+                            </p>
+
+                            <div
+                                class="flex flex-wrap gap-4 text-sm font-bold text-white/80 uppercase tracking-widest pt-4">
+                                <span class="flex items-center gap-2"><span class="text-blue-400">•</span>
+                                    DEVELOP</span>
+                                <span class="flex items-center gap-2"><span class="text-cyan-400">•</span> UNITE</span>
+                                <span class="flex items-center gap-2"><span class="text-blue-400">•</span> NEXT</span>
+                            </div>
+
+                            <!-- CTA Buttons -->
+                            <div class="flex flex-col sm:flex-row gap-4 pt-6">
+                                <button onclick="switchPage('policy')"
+                                    class="group px-8 py-4 bg-white text-blue-900 rounded-full font-bold hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center gap-3">
+                                    <i class="fas fa-file-alt"></i>
+                                    ดูนโยบาย
+                                    <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                                </button>
+                                <button onclick="switchPage('team')"
+                                    class="px-8 py-4 border-2 border-white/30 text-white rounded-full font-bold hover:bg-white/10 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 backdrop-blur-sm">
+                                    <i class="fas fa-users"></i>
+                                    รู้จักทีมงาน
+                                </button>
+                            </div>
                         </div>
-                        <div
-                            class="w-14 h-14 bg-green-50 dark:bg-green-900/20 rounded-2xl flex items-center justify-center text-green-500 text-2xl group-hover:scale-110">
-                            <i class="fas fa-chart-pie"></i>
+
+                        <!-- Right: Decorative Card -->
+                        <div class="hidden lg:flex justify-center items-center reveal delay-200">
+                            <div class="relative">
+                                <!-- Floating decorations -->
+                                <div
+                                    class="absolute -top-8 -right-8 w-24 h-24 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full blur-xl opacity-60 animate-float">
+                                </div>
+                                <div
+                                    class="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full blur-xl opacity-60 animate-float delay-300">
+                                </div>
+
+                                <!-- Main Card -->
+                                <div
+                                    class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-[2rem] p-6 shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                                    <div
+                                        class="bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl p-8 text-white text-center">
+                                        <div class="text-6xl font-black mb-2">LP</div>
+                                        <div class="text-2xl font-bold mb-4">Student Council</div>
+                                        <div class="text-sm opacity-80 mb-6">2026</div>
+
+                                        <!-- Mini Stats -->
+                                        <div class="grid grid-cols-3 gap-4 text-center border-t border-white/20 pt-4">
+                                            <div>
+                                                <div class="text-2xl font-bold"><span id="heroStatSuccess">0</span>%
+                                                </div>
+                                                <div class="text-xs opacity-70">สำเร็จ</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-2xl font-bold"><span id="heroStatMember">0</span></div>
+                                                <div class="text-xs opacity-70">สมาชิก</div>
+                                            </div>
+                                            <div>
+                                                <div class="text-2xl font-bold"><span id="heroStatActive">0</span></div>
+                                                <div class="text-xs opacity-70">เรื่อง</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Vote Badge -->
+                                    <div
+                                        class="absolute -top-4 -right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-slate-900 px-4 py-2 rounded-full text-sm font-black shadow-lg transform rotate-12">
+                                        ⭐ Vote Now!
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="w-full bg-slate-100 dark:bg-slate-700/50 h-2 rounded-full overflow-hidden">
-                        <div id="barSuccess"
-                            class="bg-gradient-to-r from-green-400 to-emerald-500 h-full w-0 transition-all duration-1000 ease-out">
-                        </div>
+                </div>
+
+                <!-- Scroll Indicator -->
+                <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
+                    <div class="w-8 h-12 border-2 border-white/30 rounded-full flex items-start justify-center p-2">
+                        <div class="w-1.5 h-3 bg-white/50 rounded-full animate-pulse"></div>
                     </div>
                 </div>
-                <div onclick="switchPage('team')"
-                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-200">
-                    <div class="flex justify-between items-start mb-6 relative">
-                        <div>
-                            <p
-                                class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-blue-500 transition-colors">
-                                สมาชิกสภา</p>
-                            <h3 class="text-5xl font-display font-black text-slate-800 dark:text-white"><span
-                                    id="statMember">0</span> <span
-                                    class="text-xl font-display text-slate-400 font-bold">คน</span></h3>
+            </section>
+
+            <!-- Stats Cards Section -->
+            <section id="stats-section" class="py-12">
+                <div class="max-w-7xl mx-auto px-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div onclick="switchPage('policy')"
+                            class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-100">
+                            <div class="flex justify-between items-start mb-6 relative">
+                                <div>
+                                    <p
+                                        class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-green-500 transition-colors">
+                                        ความสำเร็จ</p>
+                                    <h3 class="text-5xl font-display font-black text-slate-800 dark:text-white"><span
+                                            id="statSuccess">0</span>%</h3>
+                                </div>
+                                <div
+                                    class="w-14 h-14 bg-green-50 dark:bg-green-900/20 rounded-2xl flex items-center justify-center text-green-500 text-2xl group-hover:scale-110">
+                                    <i class="fas fa-chart-pie"></i>
+                                </div>
+                            </div>
+                            <div class="w-full bg-slate-100 dark:bg-slate-700/50 h-2 rounded-full overflow-hidden">
+                                <div id="barSuccess"
+                                    class="bg-gradient-to-r from-green-400 to-emerald-500 h-full w-0 transition-all duration-1000 ease-out">
+                                </div>
+                            </div>
                         </div>
-                        <div
-                            class="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-500 text-2xl group-hover:scale-110">
-                            <i class="fas fa-users"></i>
+                        <div onclick="switchPage('team')"
+                            class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-200">
+                            <div class="flex justify-between items-start mb-6 relative">
+                                <div>
+                                    <p
+                                        class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-blue-500 transition-colors">
+                                        สมาชิกสภา</p>
+                                    <h3 class="text-5xl font-display font-black text-slate-800 dark:text-white"><span
+                                            id="statMember">0</span> <span
+                                            class="text-xl font-display text-slate-400 font-bold">คน</span></h3>
+                                </div>
+                                <div
+                                    class="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center text-blue-500 text-2xl group-hover:scale-110">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div onclick="switchPage('complaint')"
+                            class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-300">
+                            <div class="flex justify-between items-start mb-6 relative">
+                                <div>
+                                    <p
+                                        class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-orange-500 transition-colors">
+                                        เรื่องร้องเรียน</p>
+                                    <h3 class="text-5xl font-display font-black text-slate-800 dark:text-white"><span
+                                            id="statActive">0</span> <span
+                                            class="text-xl font-display text-slate-400 font-bold">เรื่อง</span></h3>
+                                </div>
+                                <div
+                                    class="w-14 h-14 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center text-orange-500 text-2xl group-hover:scale-110">
+                                    <i class="fas fa-bolt"></i>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div onclick="switchPage('complaint')"
-                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-300">
-                    <div class="flex justify-between items-start mb-6 relative">
-                        <div>
-                            <p
-                                class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-orange-500 transition-colors">
-                                เรื่องร้องเรียน</p>
-                            <h3 class="text-5xl font-display font-black text-slate-800 dark:text-white"><span
-                                    id="statActive">0</span> <span
-                                    class="text-xl font-display text-slate-400 font-bold">เรื่อง</span></h3>
-                        </div>
-                        <div
-                            class="w-14 h-14 bg-orange-50 dark:bg-orange-900/20 rounded-2xl flex items-center justify-center text-orange-500 text-2xl group-hover:scale-110">
-                            <i class="fas fa-bolt"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </section>
         </div>
 
-        <div id="page-activities" class="page-section max-w-7xl mx-auto">
+        <div id="page-activities" class="page-section max-w-7xl mx-auto pt-32 px-4">
             <div class="text-center mb-16">
                 <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
-                    กิจกรรมล่าสุด</h2>
+                    ประกาศและข่าวสาร</h2>
             </div>
             <div id="activityGallery" class="grid grid-cols-1 md:grid-cols-3 gap-8 min-h-[300px]"></div>
         </div>
-        <div id="page-policy" class="page-section max-w-5xl mx-auto">
+        <div id="page-policy" class="page-section max-w-5xl mx-auto pt-32 px-4">
             <div class="text-center mb-16">
                 <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
                     ติดตามนโยบาย
@@ -199,7 +313,109 @@
             <div id="policyList" class="space-y-8 min-h-[300px]"></div>
         </div>
 
-        <div id="page-qa" class="page-section max-w-6xl mx-auto">
+        <div id="page-calendar" class="page-section max-w-7xl mx-auto pt-32 px-4">
+            <div class="text-center mb-10">
+                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
+                    ปฏิทินกิจกรรม
+                </h2>
+                <p class="text-slate-500 dark:text-slate-400 text-lg">ไม่พลาดทุกเหตุการณ์สำคัญในรั้วโรงเรียน</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <!-- Calendar (Left - 8 cols) -->
+                <div class="lg:col-span-8 glass-card p-6 md:p-10 rounded-[2.5rem] reveal">
+                    <!-- Calendar Header -->
+                    <div class="flex justify-between items-center mb-8">
+                        <h3 class="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white"
+                            id="calendarMonthYear">...</h3>
+                        <div class="flex gap-2">
+                            <button onclick="window.changeMonth(-1)"
+                                class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition"><i
+                                    class="fas fa-chevron-left"></i></button>
+                            <button onclick="window.changeMonth(1)"
+                                class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-100 hover:text-blue-600 flex items-center justify-center transition"><i
+                                    class="fas fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Weekdays -->
+                    <div class="grid grid-cols-7 mb-4 text-center">
+                        <div class="text-sm font-bold text-slate-400 uppercase">อา</div>
+                        <div class="text-sm font-bold text-slate-400 uppercase">จ</div>
+                        <div class="text-sm font-bold text-slate-400 uppercase">อ</div>
+                        <div class="text-sm font-bold text-slate-400 uppercase">พ</div>
+                        <div class="text-sm font-bold text-slate-400 uppercase">พฤ</div>
+                        <div class="text-sm font-bold text-slate-400 uppercase">ศ</div>
+                        <div class="text-sm font-bold text-slate-400 uppercase">ส</div>
+                    </div>
+
+                    <!-- Days Grid -->
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-2 md:gap-4"></div>
+                </div>
+
+                <!-- Upcoming Sidebar (Right - 4 cols) -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div
+                        class="glass-card p-6 md:p-8 rounded-[2rem] reveal delay-100 bg-gradient-to-br from-blue-600 to-blue-700 text-white relative overflow-hidden">
+                        <div class="absolute top-0 right-0 p-4 opacity-10"><i
+                                class="fas fa-hourglass-half text-8xl"></i></div>
+                        <h3 class="text-xl font-bold mb-4 relative z-10">เร็วๆ นี้</h3>
+                        <div id="upcomingList" class="space-y-4 relative z-10">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 md:p-8 rounded-[2rem] reveal delay-200">
+                        <h3 class="text-xl font-bold mb-4 text-slate-900 dark:text-white">หมวดหมู่</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3"><span
+                                    class="w-3 h-3 rounded-full bg-blue-500"></span><span
+                                    class="text-slate-600 dark:text-slate-300">กิจกรรม (Activity)</span></div>
+                            <div class="flex items-center gap-3"><span
+                                    class="w-3 h-3 rounded-full bg-orange-500"></span><span
+                                    class="text-slate-600 dark:text-slate-300">วิชาการ (Academic)</span></div>
+                            <div class="flex items-center gap-3"><span
+                                    class="w-3 h-3 rounded-full bg-red-500"></span><span
+                                    class="text-slate-600 dark:text-slate-300">วันหยุด (Holiday)</span></div>
+                            <div class="flex items-center gap-3"><span
+                                    class="w-3 h-3 rounded-full bg-purple-500"></span><span
+                                    class="text-slate-600 dark:text-slate-300">สำคัญ (Important)</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Detail Modal (Hidden) -->
+        <div id="event-modal"
+            class="hidden fixed inset-0 z-[100] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div
+                class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl max-w-md w-full overflow-hidden animate-popup relative">
+                <button onclick="document.getElementById('event-modal').classList.add('hidden')"
+                    class="absolute top-4 right-4 z-20 w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center text-slate-500 dark:text-white hover:bg-slate-200 transition"><i
+                        class="fas fa-times"></i></button>
+                <div id="event-modal-header" class="h-32 bg-blue-500 relative flex items-center justify-center">
+                    <i class="fas fa-calendar-alt text-6xl text-white/50"></i>
+                </div>
+                <div class="p-8">
+                    <span id="event-modal-badge"
+                        class="inline-block px-3 py-1 rounded-full bg-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-widest mb-3">Activity</span>
+                    <h3 id="event-modal-title" class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Title
+                    </h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mb-6 flex items-center gap-4">
+                        <span><i class="far fa-clock mr-1"></i> <span id="event-modal-time">08:00</span></span>
+                        <span><i class="fas fa-map-marker-alt mr-1"></i> <span
+                                id="event-modal-loc">Location</span></span>
+                    </p>
+                    <p id="event-modal-desc" class="text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
+                        Description...</p>
+                    <button onclick="document.getElementById('event-modal').classList.add('hidden')"
+                        class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white font-bold py-3 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition">ปิด</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-qa" class="page-section max-w-6xl mx-auto pt-32 px-4">
             <div class="text-center mb-16">
                 <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
                     ถาม-ตอบ
@@ -220,7 +436,7 @@
             </div>
         </div>
 
-        <div id="page-team" class="page-section max-w-7xl mx-auto">
+        <div id="page-team" class="page-section max-w-7xl mx-auto pt-32 px-4">
             <div class="text-center mb-16">
                 <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
                     คณะกรรมการนักเรียน</h2>
@@ -228,7 +444,7 @@
             <div id="teamGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 min-h-[300px]"></div>
         </div>
 
-        <div id="page-complaint" class="page-section max-w-3xl mx-auto">
+        <div id="page-complaint" class="page-section max-w-3xl mx-auto pt-32 px-4">
             <div
                 class="glass-card p-10 md:p-16 rounded-[3rem] relative overflow-hidden border border-white/50 dark:border-slate-700 shadow-2xl">
 
@@ -246,9 +462,11 @@
 
                 <div id="complaint-submit-view" class="animate-fade-in">
                     <div class="text-center mb-12 relative">
-                        <h2 class="text-4xl font-display font-black text-slate-900 dark:text-white mb-2">HOTLINE SERVICE
+                        <h2 class="text-4xl font-display font-black text-slate-900 dark:text-white mb-2">HOTLINE
+                            SERVICE
                         </h2>
-                        <p class="text-slate-500 dark:text-slate-400">แจ้งปัญหาหรือข้อเสนอแนะ ข้อมูลจะเป็นความลับสูงสุด
+                        <p class="text-slate-500 dark:text-slate-400">แจ้งปัญหาหรือข้อเสนอแนะ
+                            ข้อมูลจะเป็นความลับสูงสุด
                         </p>
                     </div>
                     <form onsubmit="window.submitComplaint(event)" class="space-y-6 relative">
@@ -277,7 +495,8 @@
                 <!-- Track Form -->
                 <div id="complaint-track-view" class="hidden animate-fade-in">
                     <div class="text-center mb-10">
-                        <h2 class="text-4xl font-display font-black text-slate-900 dark:text-white mb-2">TRACKING</h2>
+                        <h2 class="text-4xl font-display font-black text-slate-900 dark:text-white mb-2">TRACKING
+                        </h2>
                         <p class="text-slate-500 dark:text-slate-400">ตรวจสอบสถานะเรื่องร้องเรียนของคุณ</p>
                     </div>
                     <div class="max-w-md mx-auto space-y-6">
@@ -296,7 +515,8 @@
                             </h3>
                             <p id="trackStatusDesc" class="text-slate-500 dark:text-slate-400 text-sm"></p>
                             <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                                <p class="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Response from
+                                <p class="text-xs text-slate-400 uppercase tracking-widest font-bold mb-1">Response
+                                    from
                                     Council</p>
                                 <p id="trackResponse" class="text-slate-700 dark:text-slate-300 italic">
                                     "ยังไม่มีการตอบกลับ"</p>
@@ -308,6 +528,37 @@
             </div>
         </div>
     </main>
+
+    <!-- News Detail Modal (Global - Always Accessible) -->
+    <div id="news-modal"
+        class="hidden fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div
+            class="glass-card max-w-4xl w-full rounded-[2.5rem] overflow-hidden relative animate-popup bg-white dark:bg-slate-900 border-0 shadow-2xl flex flex-col md:flex-row min-h-[500px]">
+            <button onclick="document.getElementById('news-modal').classList.add('hidden')"
+                class="absolute top-4 right-4 z-20 w-10 h-10 bg-black/20 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-red-500 transition shadow-lg"><i
+                    class="fas fa-times"></i></button>
+
+            <!-- Image Side -->
+            <div class="w-full md:w-1/2 relative bg-slate-100 dark:bg-slate-800 min-h-[250px] md:min-h-full">
+                <img id="news-modal-img" src="" class="absolute inset-0 w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                <span id="news-modal-cat"
+                    class="absolute bottom-6 left-6 inline-block px-3 py-1 rounded-full bg-blue-500 text-white text-[10px] font-bold uppercase tracking-widest shadow-lg">News</span>
+            </div>
+
+            <!-- Content Side -->
+            <div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col overflow-y-auto max-h-[60vh] md:max-h-full">
+                <h3 id="news-modal-title"
+                    class="text-3xl md:text-4xl font-display font-black text-slate-900 dark:text-white mb-6 leading-tight">
+                    Headline</h3>
+                <div id="news-modal-detail"
+                    class="text-slate-600 dark:text-slate-300 leading-relaxed text-lg break-words"
+                    style="word-wrap: break-word; overflow-wrap: break-word;">
+                    Content...
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer
         class="bg-white/50 dark:bg-dark-900/50 border-t border-slate-200 dark:border-slate-800 pt-20 pb-10 text-center transition-colors duration-300 backdrop-blur-sm mt-20">

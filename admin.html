@@ -83,6 +83,12 @@
                     <i class="fas fa-grid-2 w-6 text-center group-hover:text-brand-500 transition-colors"></i> <span
                         class="font-medium text-sm">Dashboard</span>
                 </button>
+                <button onclick="window.switchTab('calendar')" id="btn-calendar"
+                    class="nav-item w-full p-3.5 flex items-center gap-4 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 rounded-2xl transition-all group">
+                    <i class="fas fa-calendar-alt w-6 text-center group-hover:text-brand-500 transition-colors"></i>
+                    <span class="font-medium text-sm">Calendar</span>
+                </button>
+
 
                 <p class="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-6">Management</p>
                 <button onclick="window.switchTab('complaints')" id="btn-complaints"
@@ -111,8 +117,8 @@
                 </button>
                 <button onclick="window.switchTab('activities')" id="btn-activities"
                     class="nav-item w-full p-3.5 flex items-center gap-4 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 rounded-2xl transition-all group">
-                    <i class="fas fa-images w-6 text-center group-hover:text-brand-500 transition-colors"></i> <span
-                        class="font-medium text-sm">Activities</span>
+                    <i class="fas fa-newspaper w-6 text-center group-hover:text-brand-500 transition-colors"></i> <span
+                        class="font-medium text-sm">News / Gallery</span>
                 </button>
                 <button onclick="window.switchTab('members')" id="btn-members"
                     class="nav-item w-full p-3.5 flex items-center gap-4 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5 rounded-2xl transition-all group">
@@ -243,6 +249,30 @@
                             </div>
                             <span class="ml-4 font-bold text-slate-400" id="maintenanceStatusText">OFF</span>
                         </label>
+                    </div>
+                </div>
+
+                <!-- CALENDAR MANAGER -->
+                <div id="view-calendar" class="hidden animate-in max-w-6xl mx-auto">
+                    <header class="mb-8 flex justify-between items-center">
+                        <div>
+                            <h2 class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Events
+                            </h2>
+                            <p class="text-slate-500 dark:text-slate-400 font-medium">Manage school schedule</p>
+                        </div>
+                        <button onclick="window.openModal('eventModal')"
+                            class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition"><i
+                                class="fas fa-plus mr-2"></i> Add Event</button>
+                    </header>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div
+                            class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-white/5">
+                            <h3 class="font-bold text-xl mb-6 text-slate-900 dark:text-white">Upcoming Events</h3>
+                            <div id="adminEventList" class="space-y-4">
+                                <!-- JS Injected -->
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -404,13 +434,14 @@
                 <div id="view-activities" class="hidden animate-in max-w-6xl mx-auto">
                     <header class="mb-8 flex justify-between items-center">
                         <div>
-                            <h2 class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Gallery
+                            <h2 class="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">News
+                                Manager
                             </h2>
-                            <p class="text-slate-500 dark:text-slate-400 font-medium">Activity photos</p>
+                            <p class="text-slate-500 dark:text-slate-400 font-medium">Post updates & photos</p>
                         </div>
                         <button onclick="window.openModal('activityModal')"
                             class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition"><i
-                                class="fas fa-plus mr-2"></i> Add Photo</button>
+                                class="fas fa-plus mr-2"></i> Add News</button>
                     </header>
                     <div id="activityGrid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
                 </div>
@@ -495,14 +526,53 @@
         </div>
     </div>
 
+    <!-- Event Modal -->
+    <div id="eventModal"
+        class="hidden fixed inset-0 z-[70] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+        <div
+            class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] w-full max-w-md shadow-2xl animate-in border border-white/20">
+            <h3 class="font-bold text-2xl mb-6 text-slate-900 dark:text-white">Add Event</h3>
+            <form onsubmit="window.handleFirebaseSubmit(event, 'events', 'eventModal')" class="space-y-4">
+                <input type="hidden" name="key">
+                <input name="title" placeholder="Event Title" required
+                    class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
+                <select name="category"
+                    class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
+                    <option value="ACADEMIC">Academic</option>
+                    <option value="SPORTS">Sports</option>
+                    <option value="VOLUNTEER">Volunteer</option>
+                    <option value="EVENT">General</option>
+                </select>
+                <div class="grid grid-cols-2 gap-4">
+                    <input name="date" type="date" required
+                        class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
+                    <input name="time" type="time"
+                        class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
+                </div>
+                <input name="location" placeholder="Location" required
+                    class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
+                <textarea name="description" placeholder="Description" rows="3"
+                    class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white"></textarea>
+
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="window.closeModal('eventModal')"
+                        class="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition">Cancel</button>
+                    <button type="submit"
+                        class="flex-1 bg-brand-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-brand-700 transition">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Activity Modal -->
     <div id="activityModal"
         class="hidden fixed inset-0 z-[70] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
         <div
             class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] w-full max-w-md shadow-2xl animate-in border border-white/20">
-            <h3 class="font-bold text-2xl mb-6 text-slate-900 dark:text-white">Add Activity</h3>
+            <h3 class="font-bold text-2xl mb-6 text-slate-900 dark:text-white">Add News</h3>
             <form onsubmit="window.handleFirebaseSubmit(event, 'activities', 'activityModal')" class="space-y-4">
-                <input name="title" placeholder="Activity Name" required
+                <input type="hidden" name="key">
+                <input name="title" placeholder="News Headline" required
                     class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
                 <select name="category"
                     class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
@@ -513,6 +583,8 @@
                 </select>
                 <input name="image" placeholder="Image URL (Landscape)" required
                     class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
+                <textarea name="detail" placeholder="News Details / Content" rows="4"
+                    class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white"></textarea>
                 <div class="pt-4 flex gap-3">
                     <button type="button" onclick="window.closeModal('activityModal')"
                         class="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition">Cancel</button>
