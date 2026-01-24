@@ -466,19 +466,69 @@ button:active,
     animation: float 6s ease-in-out infinite;
 }
 
-/* ========== PAGE SECTIONS ========== */
+
+/* ========== SCROLL REVEAL ========== */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Staggered delays for children if needed */
+.delay-100 {
+    transition-delay: 0.1s;
+}
+
+.delay-200 {
+    transition-delay: 0.2s;
+}
+
+.delay-300 {
+    transition-delay: 0.3s;
+}
+
+/* ========== MODAL EXIT ANIMATION ========== */
+@keyframes popout {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+    }
+}
+
+.animate-popout {
+    animation: popout 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Page Transitions */
 .page-section {
     display: none;
     opacity: 0;
-    transition: opacity 0.4s ease-in-out;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .page-section.active {
     display: block;
     opacity: 1;
+    transform: translateY(0);
 }
 
-/* ========== MODAL ANIMATIONS ========== */
+.page-section.fading-out {
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+}
+
 .animate-popup {
     animation: popup 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

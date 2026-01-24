@@ -158,7 +158,7 @@ onValue(query(ref(db, 'activities'), limitToLast(20)), (snapshot) => {
         Object.values(data).reverse().forEach(item => {
             let color = item.category === 'SPORTS' ? 'bg-green-500' : (item.category === 'ACADEMIC' ? 'bg-blue-500' : 'bg-purple-500');
             gallery.innerHTML += `
-                <div class="glass-card h-80 rounded-[2.5rem] overflow-hidden group relative cursor-pointer hover:shadow-2xl transition-all duration-500 border-0 card-lift">
+                <div class="glass-card h-80 rounded-[2.5rem] overflow-hidden group relative cursor-pointer hover:shadow-2xl transition-all duration-500 border-0 card-lift reveal">
                     <img src="${item.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110" onerror="this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22400%22%20viewBox%3D%220%200%20600%20400%22%3E%3Crect%20fill%3D%22%23cbd5e1%22%20width%3D%22600%22%20height%3D%22400%22%2F%3E%3Ctext%20fill%3D%22%2364748b%22%20font-family%3D%22sans-serif%22%20font-size%3D%2230%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E'">
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/20 to-transparent flex flex-col justify-end p-8 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                         <span class="${color} text-white text-[10px] font-bold px-3 py-1 rounded-full w-fit mb-3 uppercase tracking-wider shadow-lg">${item.category}</span>
@@ -195,7 +195,7 @@ onValue(ref(db, 'policies'), (snapshot) => {
         let imgHtml = item.image ? `<img src="${item.image}" class="w-full h-56 object-cover rounded-3xl mb-6 shadow-md hover:shadow-xl transition-shadow duration-500">` : '';
 
         container.innerHTML += `
-            <div class="glass-card p-10 rounded-[3rem] hover:border-blue-400/50 transition-all duration-500 hover:shadow-2xl group">
+            <div class="glass-card p-10 rounded-[3rem] hover:border-blue-400/50 transition-all duration-500 hover:shadow-2xl group reveal">
                 ${imgHtml}
                 <div class="flex flex-col md:flex-row justify-between items-start mb-8 gap-4">
                     <div class="flex items-start gap-6">
@@ -235,7 +235,7 @@ onValue(ref(db, 'members'), (snapshot) => {
     Object.keys(data).forEach(key => {
         const item = data[key];
         container.innerHTML += `
-            <div onclick="window.openMemberDetail('${key}')" class="glass-card rounded-[3rem] overflow-hidden group hover:-translate-y-3 transition-all duration-500 cursor-pointer border-0 shadow-lg hover:shadow-2xl">
+            <div onclick="window.openMemberDetail('${key}')" class="glass-card rounded-[3rem] overflow-hidden group hover:-translate-y-3 transition-all duration-500 cursor-pointer border-0 shadow-lg hover:shadow-2xl reveal">
                 <div class="h-96 bg-slate-200 dark:bg-slate-800 overflow-hidden relative">
                     <img src="${item.image}" class="w-full h-full object-cover transition duration-700 group-hover:scale-105" onerror="this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22500%22%20viewBox%3D%220%200%20400%20500%22%3E%3Crect%20fill%3D%22%23cbd5e1%22%20width%3D%22400%22%20height%3D%22500%22%2F%3E%3Ctext%20fill%3D%22%2364748b%22%20font-family%3D%22sans-serif%22%20font-size%3D%2230%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3EUser%3C%2Ftext%3E%3C%2Fsvg%3E'">
                     <div class="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent pt-32">
@@ -289,7 +289,7 @@ onValue(query(ref(db, 'qa'), limitToLast(50)), (snapshot) => {
             : '';
 
         container.innerHTML += `
-            <div class="glass-card p-8 rounded-[2.5rem] hover:border-blue-300/30 transition-all duration-300 group">
+            <div class="glass-card p-8 rounded-[2.5rem] hover:border-blue-300/30 transition-all duration-300 group reveal">
                 <div class="flex justify-between items-start mb-4">
                     <span class="text-xs text-slate-400 font-mono flex items-center gap-2"><i class="far fa-calendar-alt"></i> ${new Date(item.timestamp).toLocaleDateString('th-TH')}</span>
                     ${statusBadge}
@@ -321,8 +321,14 @@ onValue(ref(db, 'announcement'), (snapshot) => {
             imgContainer.classList.add('hidden');
         }
         popup.classList.remove('hidden');
-    } else if (popup) {
-        popup.classList.add('hidden');
+    } else if (popup && !popup.classList.contains('hidden')) {
+        // Animate closing
+        const content = popup.children[0];
+        content.classList.add('animate-popout');
+        setTimeout(() => {
+            popup.classList.add('hidden');
+            content.classList.remove('animate-popout');
+        }, 300);
     }
 });
 
@@ -551,21 +557,99 @@ window.submitQa = (e) => {
         });
 };
 
+// Enhanced switchPage with transition
 window.switchPage = (pageId) => {
-    document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-    document.getElementById('page-' + pageId).classList.add('active');
+    const currentResults = document.querySelectorAll('.page-section.active');
+    const targetPage = document.getElementById('page-' + pageId);
+
+    // Update nav immediately for responsiveness
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     const navBtn = document.getElementById('nav-' + pageId);
     if (navBtn) navBtn.classList.add('active');
-    window.scrollTo(0, 0);
+
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (currentResults.length > 0) {
+        currentResults.forEach(page => {
+            page.classList.add('fading-out');
+            page.classList.remove('active');
+
+            // Wait for fade out
+            setTimeout(() => {
+                page.classList.remove('fading-out');
+                page.style.display = 'none';
+            }, 400); // Match CSS transition time
+        });
+
+        // Delay showing new page slightly to allow fade out
+        setTimeout(() => {
+            document.querySelectorAll('.page-section').forEach(el => el.style.display = 'none'); // Safety clear
+            if (targetPage) {
+                targetPage.style.display = 'block';
+                // Trigger reflow
+                void targetPage.offsetWidth;
+                targetPage.classList.add('active');
+            }
+        }, 400);
+
+    } else {
+        // First load or no active page
+        if (targetPage) {
+            targetPage.style.display = 'block';
+            setTimeout(() => targetPage.classList.add('active'), 50);
+        }
+    }
 };
 
-// Close complaint/QA modal screens
+// Scroll Reveal Observer
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: "0px 0px -50px 0px"
+};
+
+const scrollObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('active');
+            scrollObserver.unobserve(entry.target); // Only animate once
+        }
+    });
+}, observerOptions);
+
+function initScrollReveal() {
+    document.querySelectorAll('.reveal').forEach(el => scrollObserver.observe(el));
+}
+
+
+// Close complaint/QA modal screens with animation
 window.closeComplaintScreen = () => {
+    // Note: This function seems to be referring to screens that might not be fully implemented as IDs in the provided HTML context for this file,
+    // but based on context provided in prompt, we might be talking about a different modal or the logic is generic. 
+    // However, looking at the file provided, 'complaint-screen' isn't in HTML. 
+    // But 'announcement-popup' and 'member-detail-modal' are valid.
+    // Let's keep this generic or focus on what exists. 
+    // The previous implementation had:
+    /*
     const screens = ['complaint-screen', 'qa-screen', 'track-screen'];
     screens.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
+    });
+    */
+    // I will keep it but assume it might be used by other parts not fully visible or legacy.
+    // But crucially, I must update the known modals in their specific functions.
+
+    const screens = ['complaint-screen', 'qa-screen', 'track-screen'];
+    screens.forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.classList.contains('hidden')) {
+            el.children[0].classList.add('animate-popout');
+            setTimeout(() => {
+                el.classList.add('hidden');
+                el.children[0].classList.remove('animate-popout');
+            }, 300);
+        }
     });
 };
 
@@ -581,7 +665,11 @@ window.toggleTheme = () => {
     }
 };
 
-window.toggleMobileMenu = () => document.getElementById('mobile-menu').classList.toggle('hidden');
+window.toggleMobileMenu = () => {
+    const menu = document.getElementById('mobile-menu');
+    // Simple toggle for mobile menu, can add animation if needed but CSS usually handles slide-down
+    menu.classList.toggle('hidden');
+};
 
 window.openMemberDetail = (key) => {
     const item = membersData[key];
@@ -597,16 +685,30 @@ window.openMemberDetail = (key) => {
         const bioContainer = document.getElementById('modal-bio-container');
         if (item.bio) { bioEl.innerText = item.bio; bioContainer.classList.remove('hidden'); } else { bioContainer.classList.add('hidden'); }
 
-        document.getElementById('member-detail-modal').classList.remove('hidden');
-        document.getElementById('member-detail-modal').classList.add('flex');
+        const modal = document.getElementById('member-detail-modal');
+        const modalContent = modal.querySelector('.glass-card');
+
+        modalContent.classList.remove('animate-popout');
+        modalContent.classList.add('animate-popup'); // Ensure entrance animation matches css
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
         document.body.style.overflow = 'hidden';
     }
 }
 
 window.closeMemberDetail = () => {
-    document.getElementById('member-detail-modal').classList.add('hidden');
-    document.getElementById('member-detail-modal').classList.remove('flex');
-    document.body.style.overflow = '';
+    const modal = document.getElementById('member-detail-modal');
+    const modalContent = modal.querySelector('.glass-card');
+
+    modalContent.classList.add('animate-popout');
+
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        modalContent.classList.remove('animate-popout');
+        document.body.style.overflow = '';
+    }, 300);
 }
 
 function animateValue(id, start, end, duration) {
@@ -626,4 +728,18 @@ if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.match
     document.documentElement.classList.add('dark');
     document.getElementById('theme-icon').className = 'fas fa-sun text-lg transition-transform duration-500';
 }
-window.addEventListener('load', () => window.switchPage('home'));
+window.addEventListener('load', () => {
+    window.switchPage('home');
+    initScrollReveal();
+});
+
+// Use MutationObserver to detect new content that needs reveal (like from Firebase)
+const contentObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+        if (mutation.addedNodes.length) {
+            initScrollReveal();
+        }
+    });
+});
+
+contentObserver.observe(document.body, { childList: true, subtree: true });

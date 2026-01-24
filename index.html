@@ -109,13 +109,13 @@
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> System Online
                 </div>
                 <h1
-                    class="text-6xl md:text-8xl font-display font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight drop-shadow-sm">
+                    class="text-6xl md:text-8xl font-display font-black text-slate-900 dark:text-white mb-6 tracking-tight leading-tight drop-shadow-sm reveal">
                     LP <span class="text-gradient">StudentCouncil</span></h1>
                 <p
-                    class="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light leading-relaxed">
+                    class="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-light leading-relaxed reveal delay-100">
                     ระบบสภานักเรียนยุคใหม่ โปร่งใส ตรวจสอบได้ รวดเร็ว<br
                         class="hidden md:block">เชื่อมต่อทุกเสียงของเพื่อนนักเรียนสู่การเปลี่ยนแปลงจริง</p>
-                <div class="flex flex-col sm:flex-row justify-center gap-5">
+                <div class="flex flex-col sm:flex-row justify-center gap-5 reveal delay-200">
                     <button onclick="switchPage('policy')"
                         class="group px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-full font-bold hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center gap-2">ติดตามนโยบาย
                         <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i></button>
@@ -126,7 +126,7 @@
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 px-4">
                 <div onclick="switchPage('policy')"
-                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden">
+                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-100">
                     <div class="flex justify-between items-start mb-6 relative">
                         <div>
                             <p
@@ -147,7 +147,7 @@
                     </div>
                 </div>
                 <div onclick="switchPage('team')"
-                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden">
+                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-200">
                     <div class="flex justify-between items-start mb-6 relative">
                         <div>
                             <p
@@ -164,7 +164,7 @@
                     </div>
                 </div>
                 <div onclick="switchPage('complaint')"
-                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden">
+                    class="glass-card p-8 rounded-[2rem] hover-glow cursor-pointer group relative overflow-hidden reveal delay-300">
                     <div class="flex justify-between items-start mb-6 relative">
                         <div>
                             <p
@@ -185,14 +185,15 @@
 
         <div id="page-activities" class="page-section max-w-7xl mx-auto">
             <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4">
+                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
                     กิจกรรมล่าสุด</h2>
             </div>
             <div id="activityGallery" class="grid grid-cols-1 md:grid-cols-3 gap-8 min-h-[300px]"></div>
         </div>
         <div id="page-policy" class="page-section max-w-5xl mx-auto">
             <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4">ติดตามนโยบาย
+                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
+                    ติดตามนโยบาย
                 </h2>
             </div>
             <div id="policyList" class="space-y-8 min-h-[300px]"></div>
@@ -200,7 +201,8 @@
 
         <div id="page-qa" class="page-section max-w-6xl mx-auto">
             <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4">ถาม-ตอบ
+                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
+                    ถาม-ตอบ
                     สภานักเรียน</h2>
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -220,7 +222,7 @@
 
         <div id="page-team" class="page-section max-w-7xl mx-auto">
             <div class="text-center mb-16">
-                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4">
+                <h2 class="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-4 reveal">
                     คณะกรรมการนักเรียน</h2>
             </div>
             <div id="teamGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 min-h-[300px]"></div>
