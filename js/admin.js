@@ -1,5 +1,6 @@
 import { ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { db } from "./config.js";
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { db, auth } from "./config.js";
 
 let policiesData = {};
 let qaData = {};
@@ -7,9 +8,15 @@ let membersData = {};
 let eventsData = {};
 let complaintsData = {}; // Promote to global used for filtering/export
 
-const ADMIN_PASSWORD = 'admin';
-const SESSION_KEY = 'sc_admin_session';
-const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 Hours
+// Note: Authentication is now handled by Firebase Auth (no more hardcoded passwords!)
+
+// --- SECURITY: XSS Sanitization ---
+function sanitizeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
 
 // --- UTILITY FUNCTIONS ---
 
@@ -131,61 +138,93 @@ function validateInput(input, rules = {}) {
 }
 
 
-// --- AUTH & SESSION ---
-window.checkLogin = () => {
-    // ดึงค่ารหัสผ่าน
-    const input = document.getElementById('passwordInput');
+// --- AUTH & SESSION (Firebase Authentication) ---
 
-    if (input.value === ADMIN_PASSWORD) {
-        // 1. บันทึก Session
-        localStorage.setItem(SESSION_KEY, Date.now());
+// Login with Firebase Email/Password
+window.checkLogin = async () => {
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginBtnText = document.getElementById('loginBtnText');
+    const loginError = document.getElementById('loginError');
 
-        // 2. แสดง UI ทันที (ไม่ต้องรอรีโหลด)
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('flex'); // สำคัญ: ต้องใส่ flex ไม่งั้นจอขาว
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
 
-        // 3. เริ่มดึงข้อมูล
-        initRealtimeListeners();
-        window.switchTab('overview');
+    if (!email || !password) {
+        loginError.textContent = 'กรุณากรอก Email และ Password';
+        loginError.classList.remove('hidden');
+        return;
+    }
 
-        // 4. แจ้งเตือนมุมขวาบน
+    // Loading state
+    loginBtn.disabled = true;
+    loginBtnText.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Signing in...';
+    loginError.classList.add('hidden');
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // Success - onAuthStateChanged will handle the UI
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
         Toast.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
+    } catch (error) {
+        console.error('Login error:', error);
 
-    } else {
-        Swal.fire({
-            icon: 'error',
-            title: 'รหัสผ่านไม่ถูกต้อง',
-            text: 'กรุณาลองใหม่อีกครั้ง',
-            confirmButtonColor: '#ef4444'
-        });
-        input.value = ''; // ล้างช่องรหัส
-        input.focus();    // เอาเมาส์ไปวางรอพิมพ์ใหม่
+        // Show user-friendly error message
+        let errorMsg = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            errorMsg = 'Email หรือ Password ไม่ถูกต้อง';
+        } else if (error.code === 'auth/too-many-requests') {
+            errorMsg = 'ลองผิดหลายครั้งเกินไป กรุณารอสักครู่';
+        } else if (error.code === 'auth/invalid-email') {
+            errorMsg = 'รูปแบบ Email ไม่ถูกต้อง';
+        }
+
+        loginError.textContent = errorMsg;
+        loginError.classList.remove('hidden');
+
+        // Reset button
+        loginBtn.disabled = false;
+        loginBtnText.innerHTML = 'Sign In';
     }
 };
 
+// Check Session using Firebase Auth State
 window.checkSession = () => {
-    const lastLogin = localStorage.getItem(SESSION_KEY);
-    // เช็คว่าเคยล็อกอินไหม และหมดเวลาหรือยัง (24 ชม.)
-    if (lastLogin && (Date.now() - parseInt(lastLogin) < SESSION_DURATION)) {
-        // ผ่าน: โชว์หน้าจอ Admin
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('flex');
-        initRealtimeListeners();
-        window.switchTab('overview');
-    } else {
-        // ไม่ผ่าน: โชว์หน้า Login
-        document.getElementById('loginScreen').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('flex');
-    }
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // User is signed in
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('flex');
+            initRealtimeListeners();
+            window.switchTab('overview');
+
+            // Update welcome message with email
+            const welcomeEl = document.querySelector('#view-overview h2');
+            if (welcomeEl) {
+                welcomeEl.innerHTML = `สวัสดี <span class="text-brand-500">${user.email.split('@')[0]}</span>`;
+            }
+        } else {
+            // User is signed out
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('flex');
+        }
+    });
 };
 
-window.logout = () => {
-    localStorage.removeItem(SESSION_KEY);
-    location.reload();
+// Logout with Firebase
+window.logout = async () => {
+    try {
+        await signOut(auth);
+        // onAuthStateChanged will handle the UI
+        const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+        Toast.fire({ icon: 'info', title: 'ออกจากระบบแล้ว' });
+    } catch (error) {
+        console.error('Logout error:', error);
+        showToast('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+    }
 };
 
 window.toggleSidebar = () => {
@@ -313,6 +352,9 @@ function initRealtimeListeners() {
 
         // Render Table based on current filter
         window.renderComplaintsTable(window.currentComplaintFilter || 'All');
+
+        // Update dashboard recent complaints
+        renderRecentComplaints();
     });
 
     window.renderComplaintsTable = (filterStatus) => {
@@ -353,8 +395,8 @@ function initRealtimeListeners() {
                 <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition border-b border-slate-50 dark:border-white/5 last:border-0 group">
                     <td class="p-6 font-mono text-slate-400 text-xs">${new Date(item.timestamp).toLocaleDateString('th-TH')}</td>
                     <td class="p-6 font-mono text-brand-600 dark:text-brand-400 font-bold text-xs">#${item.ticketId || '-'}</td>
-                    <td class="p-6 font-bold text-slate-800 dark:text-white">${item.topic}</td>
-                    <td class="p-6"><span class="bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold">${item.name || 'Anonymous'}</span></td>
+                    <td class="p-6 font-bold text-slate-800 dark:text-white">${sanitizeHTML(item.topic)}</td>
+                    <td class="p-6"><span class="bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold">${sanitizeHTML(item.name) || 'Anonymous'}</span></td>
                     <td class="p-6"><select onchange="window.updateStatus('complaints/${key}', this.value)" class="${badgeClass} px-3 py-1.5 rounded-lg text-xs font-bold border-none cursor-pointer outline-none appearance-none hover:opacity-80 transition"><option value="Pending" ${item.status === 'Pending' ? 'selected' : ''}>Wait</option><option value="In Progress" ${item.status === 'In Progress' ? 'selected' : ''}>Doing</option><option value="Done" ${item.status === 'Done' ? 'selected' : ''}>Done</option><option value="Completed" ${item.status === 'Completed' ? 'selected' : ''}>Completed</option></select></td>
                     <td class="p-6 flex items-center gap-2">
                          <button onclick="window.showDetail('${key}', '${item.topic}', '${(item.detail || '').replace(/'/g, "\\'")}', '${(item.response || '').replace(/'/g, "\\'")}')" class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-500/30 flex items-center justify-center transition"><i class="fas fa-eye"></i></button>
@@ -524,6 +566,9 @@ function initRealtimeListeners() {
             grid.style.opacity = '1';
             grid.style.transition = 'opacity 0.3s ease-in-out';
         }, 50);
+
+        // Update dashboard stats
+        updateAdditionalStats();
     });
 
     // 6. Members
@@ -563,15 +608,27 @@ function initRealtimeListeners() {
             grid.style.transition = 'opacity 0.3s ease-in-out';
         }, 50);
 
+        // Update dashboard stats
+        updateAdditionalStats();
     });
 
-    // 7. Maintenance (ปรับปรุงแล้ว: อัปเดต UI จากฐานข้อมูล)
+    // 7. Maintenance (อัปเดต UI จากฐานข้อมูล)
     onValue(ref(db, 'maintenance'), (snapshot) => {
         const status = snapshot.val();
-        document.getElementById('maintenanceToggle').checked = status;
+        const toggle = document.getElementById('maintenanceToggle');
         const text = document.getElementById('maintenanceStatusText');
-        text.innerText = status ? 'ON' : 'OFF';
-        text.className = status ? 'ml-3 text-sm font-bold text-red-500' : 'ml-3 text-sm font-bold text-slate-400';
+        const dot = document.getElementById('maintenanceDot');
+
+        if (toggle) toggle.checked = status;
+        if (text) {
+            text.innerText = status ? 'ON' : 'OFF';
+            text.className = status ? 'font-bold text-xl text-red-500' : 'font-bold text-xl text-slate-400';
+        }
+        if (dot) {
+            dot.className = status
+                ? 'w-3 h-3 bg-red-500 rounded-full animate-pulse'
+                : 'w-3 h-3 bg-slate-500 rounded-full';
+        }
     });
 
     // 8. Events (Calendar)
@@ -583,7 +640,8 @@ function initRealtimeListeners() {
 
         container.innerHTML = '';
         if (!data) {
-            container.innerHTML = '<div class="text-center text-slate-400 py-4">No upcoming events</div>';
+            container.innerHTML = '<div class="text-center text-slate-400 py-4">ไม่มีกิจกรรมที่กำลังจะมาถึง</div>';
+            updateAdditionalStats();
             return;
         }
 
@@ -934,4 +992,88 @@ if (localStorage.getItem('darkMode') === 'true') {
 }
 
 // Start Check Session
-window.addEventListener('load', window.checkSession);
+window.addEventListener('load', () => {
+    window.checkSession();
+    updateDateTime();
+    setInterval(updateDateTime, 60000); // Update every minute
+});
+
+// Update Date/Time Display
+function updateDateTime() {
+    const el = document.getElementById('currentDateTime');
+    if (el) {
+        const now = new Date();
+        const options = {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        el.innerText = now.toLocaleDateString('th-TH', options);
+    }
+}
+
+// Render Recent Complaints for Dashboard
+function renderRecentComplaints() {
+    const container = document.getElementById('recentComplaintsList');
+    if (!container || !complaintsData) return;
+
+    const items = Object.entries(complaintsData)
+        .map(([key, value]) => ({ key, ...value }))
+        .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))
+        .slice(0, 5);
+
+    if (items.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-8 text-slate-400">
+                <i class="fas fa-check-circle text-4xl mb-2 opacity-50"></i>
+                <p class="text-sm">ไม่มีเรื่องร้องเรียน</p>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = items.map(item => {
+        const statusColors = {
+            'Pending': 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400',
+            'In Progress': 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400',
+            'Done': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400',
+            'Completed': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400'
+        };
+        const statusClass = statusColors[item.status] || statusColors['Pending'];
+        const date = item.timestamp ? new Date(item.timestamp).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : '-';
+
+        return `
+            <div onclick="window.switchTab('complaints')" class="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition group">
+                <div class="w-10 h-10 rounded-xl ${item.status === 'Pending' ? 'bg-amber-100 text-amber-600' : 'bg-slate-100 text-slate-400'} dark:bg-slate-700 flex items-center justify-center flex-shrink-0">
+                    <i class="fas ${item.status === 'Pending' ? 'fa-clock' : 'fa-inbox'}"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-bold text-sm text-slate-800 dark:text-white truncate group-hover:text-brand-600 transition">${sanitizeHTML(item.topic) || 'ไม่มีหัวข้อ'}</p>
+                    <p class="text-xs text-slate-400 truncate">${sanitizeHTML(item.name) || 'Anonymous'} • ${date}</p>
+                </div>
+                <span class="${statusClass} text-[10px] font-bold px-2 py-1 rounded-lg flex-shrink-0">${item.status}</span>
+            </div>`;
+    }).join('');
+}
+
+// Update Additional Stats
+function updateAdditionalStats() {
+    // Members count
+    const membersCount = Object.keys(membersData || {}).length;
+    const membersEl = document.getElementById('stat-members');
+    if (membersEl) membersEl.innerText = membersCount;
+
+    // News count
+    const newsEl = document.getElementById('stat-news');
+    if (newsEl && window.newsData) {
+        newsEl.innerText = Object.keys(window.newsData).length;
+    }
+
+    // Events count
+    const eventsEl = document.getElementById('stat-events');
+    if (eventsEl && eventsData) {
+        eventsEl.innerText = Object.keys(eventsData).length;
+    }
+}

@@ -38,19 +38,22 @@
             class="bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-10 w-full max-w-sm text-center relative overflow-hidden animate-in border border-slate-100 dark:border-white/5">
             <div
                 class="w-24 h-24 bg-gradient-to-tr from-brand-500 to-blue-500 rounded-3xl mx-auto mb-8 shadow-lg flex items-center justify-center text-4xl text-white">
-                <i class="fas fa-cube"></i>
+                <i class="fas fa-shield-alt"></i>
             </div>
-            <h1 class="text-3xl font-bold mb-2 text-slate-900 dark:text-white font-sans tracking-tight">Console Access
+            <h1 class="text-3xl font-bold mb-2 text-slate-900 dark:text-white font-sans tracking-tight">Admin Login
             </h1>
-            <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm">Please verify your identity</p>
+            <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm">Sign in with your admin account</p>
 
             <form onsubmit="event.preventDefault(); window.checkLogin();">
                 <div class="space-y-4">
-                    <input type="password" id="passwordInput" placeholder="Passcode"
-                        class="input-modern w-full p-4 rounded-2xl text-center text-lg font-bold outline-none placeholder:font-normal text-slate-700 dark:text-white dark:bg-slate-900/50">
-                    <button type="submit"
+                    <input type="email" id="emailInput" placeholder="Email"
+                        class="input-modern w-full p-4 rounded-2xl text-center text-base font-medium outline-none placeholder:font-normal text-slate-700 dark:text-white dark:bg-slate-900/50">
+                    <input type="password" id="passwordInput" placeholder="Password"
+                        class="input-modern w-full p-4 rounded-2xl text-center text-base font-medium outline-none placeholder:font-normal text-slate-700 dark:text-white dark:bg-slate-900/50">
+                    <div id="loginError" class="hidden text-red-500 text-sm font-medium"></div>
+                    <button type="submit" id="loginBtn"
                         class="w-full bg-slate-900 dark:bg-white dark:text-slate-900 text-white py-4 rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition shadow-xl">
-                        Unlock
+                        <span id="loginBtnText">Sign In</span>
                     </button>
                 </div>
             </form>
@@ -159,71 +162,138 @@
             <div class="flex-1 overflow-y-auto p-6 md:p-10 scroll-smooth">
 
                 <!-- OVERVIEW -->
-                <div id="view-overview" class="animate-in max-w-6xl mx-auto">
-                    <div class="mb-10">
-                        <h2 class="text-4xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">Overview
-                        </h2>
-                        <p class="text-slate-500 dark:text-slate-400 font-medium">System status monitoring</p>
+                <div id="view-overview" class="animate-in max-w-7xl mx-auto">
+                    <!-- Header with Welcome -->
+                    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <h2 class="text-4xl font-extrabold text-slate-900 dark:text-white mb-1 tracking-tight">
+                                สวัสดี Admin </h2>
+                            <p class="text-slate-500 dark:text-slate-400 font-medium" id="currentDateTime">Loading...
+                            </p>
+                        </div>
+                        <div class="flex gap-3">
+                            <a href="index.html" target="_blank"
+                                class="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition shadow-sm">
+                                <i class="fas fa-external-link-alt"></i> ดูเว็บไซต์
+                            </a>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                        <!-- Stat Card 1 -->
-                        <div
-                            class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5 relative overflow-hidden group">
-                            <div
-                                class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-150 transition-transform duration-500">
-                                <i class="fas fa-clock text-6xl text-brand-500"></i>
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <!-- Stat Card 1: Pending -->
+                        <div onclick="window.switchTab('complaints')"
+                            class="cursor-pointer bg-gradient-to-br from-amber-500 to-orange-600 p-6 rounded-3xl shadow-lg shadow-amber-500/20 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">
+                            <div class="absolute right-0 bottom-0 opacity-20">
+                                <i class="fas fa-inbox text-8xl text-white translate-x-4 translate-y-4"></i>
                             </div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Pending</p>
-                            <h3 class="text-4xl font-black text-slate-800 dark:text-white" id="stat-pending-c">0</h3>
-                            <div
-                                class="mt-4 flex items-center text-xs font-bold text-brand-500 bg-brand-50 dark:bg-brand-500/10 px-2 py-1 rounded w-fit">
-                                <i class="fas fa-arrow-up mr-1"></i> Complaints
-                            </div>
-                        </div>
-
-                        <!-- Stat Card 2 -->
-                        <div
-                            class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5 relative overflow-hidden group">
-                            <div
-                                class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-150 transition-transform duration-500">
-                                <i class="fas fa-check-circle text-6xl text-emerald-500"></i>
-                            </div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Resolved</p>
-                            <h3 class="text-4xl font-black text-slate-800 dark:text-white" id="stat-done-c">0</h3>
-                            <div
-                                class="mt-4 flex items-center text-xs font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded w-fit">
-                                All time
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                                    <i class="fas fa-clock text-2xl text-white"></i>
+                                </div>
+                                <h3 class="text-4xl font-black text-white mb-1" id="stat-pending-c">0</h3>
+                                <p class="text-white/80 text-sm font-medium">รอดำเนินการ</p>
                             </div>
                         </div>
 
-                        <!-- Stat Card 3 -->
-                        <div
-                            class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5 relative overflow-hidden group">
-                            <div
-                                class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-150 transition-transform duration-500">
-                                <i class="fas fa-scroll text-6xl text-blue-500"></i>
+                        <!-- Stat Card 2: Resolved -->
+                        <div onclick="window.switchTab('complaints')"
+                            class="cursor-pointer bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-3xl shadow-lg shadow-emerald-500/20 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">
+                            <div class="absolute right-0 bottom-0 opacity-20">
+                                <i class="fas fa-check-double text-8xl text-white translate-x-4 translate-y-4"></i>
                             </div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Policies</p>
-                            <h3 class="text-4xl font-black text-slate-800 dark:text-white" id="stat-policy">0</h3>
-                            <div
-                                class="mt-4 flex items-center text-xs font-bold text-blue-500 bg-blue-50 dark:bg-blue-500/10 px-2 py-1 rounded w-fit">
-                                Active
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                                    <i class="fas fa-check-circle text-2xl text-white"></i>
+                                </div>
+                                <h3 class="text-4xl font-black text-white mb-1" id="stat-done-c">0</h3>
+                                <p class="text-white/80 text-sm font-medium">แก้ไขแล้ว</p>
                             </div>
                         </div>
 
-                        <!-- Stat Card 4 -->
-                        <div
-                            class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5 relative overflow-hidden group">
-                            <div
-                                class="absolute right-0 top-0 p-3 opacity-10 group-hover:scale-150 transition-transform duration-500">
-                                <i class="fas fa-comment-dots text-6xl text-purple-500"></i>
+                        <!-- Stat Card 3: Policies -->
+                        <div onclick="window.switchTab('policies')"
+                            class="cursor-pointer bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-3xl shadow-lg shadow-blue-500/20 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">
+                            <div class="absolute right-0 bottom-0 opacity-20">
+                                <i class="fas fa-list-check text-8xl text-white translate-x-4 translate-y-4"></i>
                             </div>
-                            <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Q&A</p>
-                            <h3 class="text-4xl font-black text-slate-800 dark:text-white" id="stat-qa">0</h3>
-                            <div
-                                class="mt-4 flex items-center text-xs font-bold text-purple-500 bg-purple-50 dark:bg-purple-500/10 px-2 py-1 rounded w-fit">
-                                Waiting
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                                    <i class="fas fa-scroll text-2xl text-white"></i>
+                                </div>
+                                <h3 class="text-4xl font-black text-white mb-1" id="stat-policy">0</h3>
+                                <p class="text-white/80 text-sm font-medium">นโยบาย</p>
+                            </div>
+                        </div>
+
+                        <!-- Stat Card 4: Q&A -->
+                        <div onclick="window.switchTab('qa')"
+                            class="cursor-pointer bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-3xl shadow-lg shadow-purple-500/20 relative overflow-hidden group hover:scale-[1.02] transition-all duration-300">
+                            <div class="absolute right-0 bottom-0 opacity-20">
+                                <i class="fas fa-comments text-8xl text-white translate-x-4 translate-y-4"></i>
+                            </div>
+                            <div class="relative z-10">
+                                <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                                    <i class="fas fa-comment-dots text-2xl text-white"></i>
+                                </div>
+                                <h3 class="text-4xl font-black text-white mb-1" id="stat-qa">0</h3>
+                                <p class="text-white/80 text-sm font-medium">รอตอบ Q&A</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions + Recent Activity -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <!-- Quick Actions -->
+                        <div
+                            class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5">
+                            <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <i class="fas fa-bolt text-amber-500"></i> Quick Actions
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="window.openCreatePolicy()"
+                                    class="p-4 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 rounded-2xl text-center transition group">
+                                    <i
+                                        class="fas fa-plus-circle text-2xl text-blue-500 mb-2 group-hover:scale-110 transition"></i>
+                                    <p class="text-xs font-bold text-blue-700 dark:text-blue-300">เพิ่มนโยบาย</p>
+                                </button>
+                                <button onclick="window.openModal('activityModal')"
+                                    class="p-4 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-2xl text-center transition group">
+                                    <i
+                                        class="fas fa-newspaper text-2xl text-green-500 mb-2 group-hover:scale-110 transition"></i>
+                                    <p class="text-xs font-bold text-green-700 dark:text-green-300">โพสต์ข่าว</p>
+                                </button>
+                                <button onclick="window.openCreateMember()"
+                                    class="p-4 bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 rounded-2xl text-center transition group">
+                                    <i
+                                        class="fas fa-user-plus text-2xl text-purple-500 mb-2 group-hover:scale-110 transition"></i>
+                                    <p class="text-xs font-bold text-purple-700 dark:text-purple-300">เพิ่มสมาชิก</p>
+                                </button>
+                                <button onclick="window.openModal('eventModal')"
+                                    class="p-4 bg-orange-50 dark:bg-orange-500/10 hover:bg-orange-100 dark:hover:bg-orange-500/20 rounded-2xl text-center transition group">
+                                    <i
+                                        class="fas fa-calendar-plus text-2xl text-orange-500 mb-2 group-hover:scale-110 transition"></i>
+                                    <p class="text-xs font-bold text-orange-700 dark:text-orange-300">เพิ่มกิจกรรม</p>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Recent Complaints -->
+                        <div
+                            class="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fas fa-inbox text-brand-500"></i> เรื่องร้องเรียนล่าสุด
+                                </h3>
+                                <button onclick="window.switchTab('complaints')"
+                                    class="text-xs font-bold text-brand-500 hover:text-brand-600 transition">ดูทั้งหมด
+                                    →</button>
+                            </div>
+                            <div id="recentComplaintsList" class="space-y-3">
+                                <div class="text-center py-8 text-slate-400">
+                                    <i class="fas fa-inbox text-4xl mb-2 opacity-50"></i>
+                                    <p class="text-sm">กำลังโหลด...</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -232,23 +302,63 @@
                     <div
                         class="bg-slate-900 dark:bg-black text-white p-8 rounded-[2rem] shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden">
                         <div
-                            class="absolute top-0 right-0 w-64 h-64 bg-brand-500 rounded-full blur-[100px] opacity-20 pointer-events-none translate-x-1/2 -translate-y-1/2">
+                            class="absolute top-0 right-0 w-64 h-64 bg-red-500 rounded-full blur-[100px] opacity-20 pointer-events-none translate-x-1/2 -translate-y-1/2">
                         </div>
                         <div class="relative z-10">
                             <h3 class="text-2xl font-bold mb-2 flex items-center gap-3">
-                                <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div> Maintenance Mode
+                                <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse" id="maintenanceDot"></div>
+                                <i class="fas fa-tools text-red-400"></i> Maintenance Mode
                             </h3>
-                            <p class="text-slate-400 max-w-md">Enable this to temporarily close the public website.
-                                Admins can still access this console.</p>
+                            <p class="text-slate-400 max-w-md">เปิดโหมดนี้เพื่อปิดเว็บไซต์ชั่วคราว
+                                ผู้ใช้ทั่วไปจะไม่สามารถเข้าถึงได้ แต่ Admin ยังใช้งาน Console นี้ได้ปกติ</p>
                         </div>
-                        <label class="relative inline-flex items-center cursor-pointer z-10">
-                            <input type="checkbox" id="maintenanceToggle" class="sr-only peer"
-                                onchange="window.toggleMaintenance(this)">
+                        <div class="flex items-center gap-4 z-10">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="maintenanceToggle" class="sr-only peer"
+                                    onchange="window.toggleMaintenance(this)">
+                                <div
+                                    class="w-16 h-9 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-red-500 shadow-inner">
+                                </div>
+                            </label>
+                            <span class="font-bold text-xl" id="maintenanceStatusText">OFF</span>
+                        </div>
+                    </div>
+
+                    <!-- Additional Stats Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                        <div
+                            class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center gap-4">
                             <div
-                                class="w-16 h-9 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-7 after:w-7 after:transition-all peer-checked:bg-red-500">
+                                class="w-12 h-12 bg-cyan-100 dark:bg-cyan-500/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-users text-xl text-cyan-600 dark:text-cyan-400"></i>
                             </div>
-                            <span class="ml-4 font-bold text-slate-400" id="maintenanceStatusText">OFF</span>
-                        </label>
+                            <div>
+                                <p class="text-2xl font-black text-slate-900 dark:text-white" id="stat-members">0</p>
+                                <p class="text-xs text-slate-500 font-medium">สมาชิกทีม</p>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center gap-4">
+                            <div
+                                class="w-12 h-12 bg-rose-100 dark:bg-rose-500/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-newspaper text-xl text-rose-600 dark:text-rose-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-black text-slate-900 dark:text-white" id="stat-news">0</p>
+                                <p class="text-xs text-slate-500 font-medium">ข่าวสาร</p>
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center gap-4">
+                            <div
+                                class="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/20 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-calendar-alt text-xl text-indigo-600 dark:text-indigo-400"></i>
+                            </div>
+                            <div>
+                                <p class="text-2xl font-black text-slate-900 dark:text-white" id="stat-events">0</p>
+                                <p class="text-xs text-slate-500 font-medium">กิจกรรม</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
