@@ -351,14 +351,31 @@ window.checkTicket = async () => {
     }
 
     try {
-        const snapshot = await get(query(ref(db, 'complaints'), orderByChild('ticketId'), equalTo(ticketId)));
+        // Fetch all complaints and search for matching ticketId
+        // This approach doesn't require Firebase index setup
+        const snapshot = await get(ref(db, 'complaints'));
+
+        let foundData = null;
+
+        if (snapshot.exists()) {
+            const allComplaints = snapshot.val();
+            // Search through all complaints for matching ticketId
+            for (const key in allComplaints) {
+                const complaint = allComplaints[key];
+                // Compare ticketId (case-insensitive)
+                if (complaint.ticketId && complaint.ticketId.toUpperCase() === ticketId.toUpperCase()) {
+                    foundData = complaint;
+                    break;
+                }
+            }
+        }
 
         if (resultDiv) {
             resultDiv.classList.remove('hidden');
             resultDiv.style.animation = 'fadeInScale 0.5s ease-out';
         }
 
-        if (!snapshot.exists()) {
+        if (!foundData) {
             if (resultDiv) {
                 resultDiv.innerHTML = `
                     <div class="glass-card p-6 rounded-2xl text-center border-l-4 border-red-500 mt-6">
@@ -371,7 +388,7 @@ window.checkTicket = async () => {
             return;
         }
 
-        const data = Object.values(snapshot.val())[0];
+        const data = foundData;
         const statusConfig = {
             'Pending': { icon: 'fa-clock', color: 'yellow', text: 'รอดำเนินการ' },
             'In Progress': { icon: 'fa-cog fa-spin', color: 'blue', text: 'กำลังดำเนินการ' },
@@ -395,14 +412,14 @@ window.checkTicket = async () => {
                 : 'เรื่องร้องเรียนนี้ได้รับการแก้ไขแล้ว';
         if (respEl) {
             respEl.innerHTML = data.response
-                ? `"${data.response}"`
+                ? `"${sanitizeHTML(data.response)}"`
                 : `<span class="text-slate-400 italic">ยังไม่มีการตอบกลับจากเจ้าหน้าที่</span>`;
         }
 
         showToast('พบข้อมูลแล้ว!', 'success');
     } catch (error) {
         console.error('Error checking ticket:', error);
-        showToast('เกิดข้อผิดพลาด', 'error');
+        showToast('เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
     } finally {
         btn.innerHTML = original;
         btn.disabled = false;
