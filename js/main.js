@@ -649,38 +649,72 @@ onValue('qa', (data) => {
     if (!container) return;
 
     if (!data || Object.keys(data).length === 0) {
-        container.innerHTML = '<div class="p-8 text-center text-slate-400 border border-dashed border-slate-300 rounded-3xl">ยังไม่มีคำถาม เป็นคนแรกเลย!</div>';
+        container.innerHTML = `
+            <div class="glass-card p-12 text-center rounded-[3rem] border-2 border-dashed border-slate-200 dark:border-slate-700/50">
+                <div class="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center text-4xl text-slate-300 mx-auto mb-4">
+                    <i class="far fa-comments"></i>
+                </div>
+                <h3 class="font-bold text-xl text-slate-400 dark:text-slate-500 mb-1">ยังไม่มีคำถาม</h3>
+                <p class="text-slate-400 dark:text-slate-600 text-sm">ร่วมเป็นคนแรกในการถามคำถามกับสภานักเรียน!</p>
+            </div>`;
         return;
     }
 
     const htmlParts = Object.values(data).reverse().map(item => {
-        let statusBadge = item.status === 'Answered'
-            ? '<span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[10px] font-bold px-2 py-1 rounded-full"><i class="fas fa-check-circle mr-1"></i> ตอบแล้ว</span>'
-            : '<span class="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 text-[10px] font-bold px-2 py-1 rounded-full"><i class="fas fa-clock mr-1"></i> รอคำตอบ</span>';
+        const isAnswered = item.status === 'Answered';
+
+        let statusBadge = isAnswered
+            ? '<span class="inline-flex items-center gap-1.5 bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider"><i class="fas fa-check-circle"></i> Answered</span>'
+            : '<span class="inline-flex items-center gap-1.5 bg-yellow-100 dark:bg-yellow-500/20 text-yellow-600 dark:text-yellow-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider"><i class="fas fa-clock"></i> Waiting</span>';
 
         let answerHtml = item.answer
-            ? `<div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-700/50">
-                <div class="flex gap-4">
-                    <div class="w-10 h-10 rounded-xl bg-blue-600 flex-shrink-0 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-blue-500/30">SC</div>
-                    <div>
-                        <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">คำตอบจากสภา</p>
-                        <p class="text-slate-700 dark:text-slate-300 text-base leading-relaxed">${sanitizeHTML(item.answer)}</p>
+            ? `<div class="mt-8 pt-8 border-t border-slate-100 dark:border-slate-700/50 relative">
+                <div class="absolute -top-3 left-8 bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full text-[10px] font-bold text-slate-400 border border-slate-200 dark:border-slate-700 uppercase tracking-widest">
+                    Response
+                </div>
+                <div class="flex gap-5">
+                    <div class="flex-shrink-0">
+                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white text-sm font-bold shadow-lg shadow-blue-500/20">
+                            LP
+                        </div>
+                    </div>
+                    <div class="pt-1">
+                        <div class="text-slate-800 dark:text-white text-lg leading-relaxed font-medium">
+                            ${sanitizeHTML(item.answer)}
+                        </div>
+                        <p class="text-xs font-bold text-slate-400 mt-3 flex items-center gap-2">
+                            <i class="fas fa-shield-alt text-blue-500"></i>
+                            Official Response from Council
+                        </p>
                     </div>
                 </div>
                </div>`
             : '';
 
         const timestamp = item.timestamp || item.created_at;
-        const dateStr = timestamp ? new Date(timestamp).toLocaleDateString('th-TH') : '-';
+        const dateStr = timestamp ? new Date(timestamp).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }) : '-';
 
         return `
-            <div class="glass-card p-8 rounded-[2.5rem] hover:border-blue-300/30 transition-all duration-300 group reveal">
-                <div class="flex justify-between items-start mb-4">
-                    <span class="text-xs text-slate-400 font-mono flex items-center gap-2"><i class="far fa-calendar-alt"></i> ${dateStr}</span>
-                    ${statusBadge}
+            <div class="glass-card p-8 md:p-10 rounded-[2.5rem] hover:border-blue-400/30 transition-all duration-500 group reveal border border-white/60 dark:border-white/5 relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-8 opacity-5 text-9xl font-display font-black text-slate-900 dark:text-white pointer-events-none select-none -translate-y-8 translate-x-8">Q</div>
+                
+                <div class="relative z-10">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 text-xs shadow-inner">
+                                <i class="fas fa-user-secret"></i>
+                            </div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${dateStr}</span>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    
+                    <h4 class="font-display font-bold text-2xl md:text-3xl text-slate-900 dark:text-white mb-4 leading-normal group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        "${sanitizeHTML(item.question)}"
+                    </h4>
+                    
+                    ${answerHtml}
                 </div>
-                <h4 class="font-bold text-xl text-slate-900 dark:text-white mb-2 group-hover:text-blue-500 transition-colors">"${sanitizeHTML(item.question)}"</h4>
-                ${answerHtml}
             </div>`;
     });
 
@@ -689,7 +723,7 @@ onValue('qa', (data) => {
 
     setTimeout(() => {
         container.style.opacity = '1';
-        container.style.transition = 'opacity 0.5s ease-in-out';
+        container.style.transition = 'opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
     }, 50);
 });
 
