@@ -1,5 +1,6 @@
 import db, { generateId, now } from './db.js';
 import { verifyAuth, allowCors } from './auth.js';
+import { filterText } from './filter.js';
 
 export default async function handler(req, res) {
     if (allowCors(req, res)) return;
@@ -29,11 +30,12 @@ export default async function handler(req, res) {
             const body = req.body;
             const newId = generateId();
             const timestamp = now();
+            const cleanQuestion = filterText(body.question);
 
             await db.execute({
                 sql: `INSERT INTO qa (id, question, answer, status, timestamp, created_at) 
                       VALUES (?, ?, ?, ?, ?, ?)`,
-                args: [newId, body.question, '', 'Pending', timestamp, new Date().toISOString()]
+                args: [newId, cleanQuestion, '', 'Pending', timestamp, new Date().toISOString()]
             });
 
             return res.status(201).json({ id: newId, created_at: timestamp });

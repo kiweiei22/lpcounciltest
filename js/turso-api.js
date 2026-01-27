@@ -119,7 +119,7 @@ class PollingManager {
         this.interval = null;
         this.callbacks = new Map();
         this.lastData = null;
-        this.pollRate = 3000; // 3 seconds
+        this.pollRate = 5000; // 5 seconds
     }
 
     start(collections = 'all') {

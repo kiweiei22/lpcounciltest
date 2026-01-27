@@ -1,5 +1,6 @@
 import db, { generateId, now } from './db.js';
 import { verifyAuth, allowCors } from './auth.js';
+import { filterText } from './filter.js';
 
 function generateTicketId() {
     return 'TK-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -39,15 +40,19 @@ export default async function handler(req, res) {
             const ticket = '#' + generateTicketId();
             const timestamp = now();
 
+            const cleanTopic = filterText(body.topic || '');
+            const cleanName = filterText(body.name || 'Anonymous');
+            const cleanDetail = filterText(body.detail || '');
+
             await db.execute({
                 sql: `INSERT INTO complaints (id, ticket_id, topic, name, detail, status, response, timestamp, created_at) 
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 args: [
                     newId,
                     ticket,
-                    body.topic || '',
-                    body.name || 'Anonymous',
-                    body.detail || '',
+                    cleanTopic,
+                    cleanName,
+                    cleanDetail,
                     'Pending',
                     '',
                     timestamp,

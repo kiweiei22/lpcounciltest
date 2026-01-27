@@ -232,6 +232,24 @@ window.submitComplaint = async (e) => {
         return;
     }
 
+    // Check Profanity
+    const topicInput = form.querySelector('[name="topic"]');
+    const nameInput = form.querySelector('[name="name"]');
+
+    const topic = topicInput ? topicInput.value : '';
+    const name = nameInput ? nameInput.value : '';
+    const detailText = detail.value;
+
+    if (containsProfanity(topic) || containsProfanity(name) || containsProfanity(detailText)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'ไม่อนุญาต',
+            text: 'ข้อมูลของคุณมีคำไม่เหมาะสม กรุณาแก้ไขก่อนส่ง',
+            confirmButtonColor: '#3B82F6'
+        });
+        return;
+    }
+
     // Check cooldown
     const cooldown = checkComplaintCooldown();
     if (!cooldown.canSubmit) {
@@ -865,9 +883,15 @@ onValue('maintenance', (isMaintenance) => {
 // --- Q&A FUNCTIONS ---
 
 const BANNED_WORDS = [
-    'ควย', 'หี', 'เหี้ย', 'สัตว์', 'แม่ง', 'มึง', 'กู', 'เย็ด', 'สันดาน', 'อีดอก',
-    'อีสัตว์', 'ไอ้บ้า', 'อีบ้า', 'ชาติหมา', 'ส้นตีน', 'อีควาย', 'ไอ้ควาย', 'หน้าหี',
-    'เงี่ยน', 'อมควย', 'fuck', 'shit', 'bitch', 'dick', 'pussy', 'asshole'
+    "กู", "มึง", "ควย", "เหี้ย", "สัตว์", "เย็ด", "หี", "แตด", "สัส", "ไอ้สัตว์", "พ่อมึงตาย", "แม่มึงตาย", "โคตรแม่", "โคตรพ่อ",
+    "ดอกทอง", "อีดอก", "เลว", "โง่", "ควาย", "ระยำ", "ชาติหมา", "ชิบหาย", "สถุน", "เสนียด", "จัญไร", "วิบัติ",
+    "ซวย", "หน้าตัวเมีย", "หน้าหี", "หมาไม่แดก", "แม่ง", "ไอ้เหี้ย", "ไอ้สัส", "ไอ้ควาย", "อีเหี้ย", "อีสัส", "อีควาย",
+    "เยดแม่", "เยดพ่อ", "ควยไร", "ส้นตีน", "หน้าตีน", "ปากหมา", "ปากดี", "ไอ้เวร", "อีเวร", "ชาติชั่ว", "นรก", "ระยำหมา",
+    "ลามปาม", "เสือก", "สารเลว", "ทุเรศ", "ปัญญาอ่อน", "บ้ากาม", "วิตถาร", "ไอ้หน้าโง่", "อีหน้าโง่", "ไอ้ขี้แพ้", "อีขี้แพ้",
+    "ขยะเปียก", "ขยะสังคม", "เศษเดน", "เดรัจฉาน", "ไอ้บ้า", "อีบ้า", "ไอ้โง่", "อีโง่",
+    "fuck", "shit", "bitch", "cunt", "asshole", "motherfucker", "dick", "pussy", "bastard", "whore", "slut", "wanker",
+    "bullshit", "damn", "fucker", "fucking", "shitty", "cock", "suck", "ass", "idiot", "stupid", "moron", "retard",
+    "jerk", "douchebag", "fag", "faggot", "nigger", "nigga", "sex", "porn", "xxx"
 ];
 
 function containsProfanity(text) {
