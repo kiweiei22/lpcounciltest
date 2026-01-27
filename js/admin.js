@@ -1,14 +1,28 @@
-import { ref, push, set, onValue, remove, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+// --- Admin.js (Turso Version) ---
+// Uses Turso API instead of Firebase Realtime Database
+// Keeps Firebase Auth for authentication
+
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { db, auth } from "./config.js";
+import { auth } from "./config.js";
+import {
+    polling,
+    startPolling,
+    setAuthToken,
+    onValue,
+    policies as policiesApi,
+    members as membersApi,
+    complaints as complaintsApi,
+    activities as activitiesApi,
+    qa as qaApi,
+    events as eventsApi,
+    settings as settingsApi
+} from "./turso-api.js";
 
 let policiesData = {};
 let qaData = {};
 let membersData = {};
 let eventsData = {};
-let complaintsData = {}; // Promote to global used for filtering/export
-
-// Note: Authentication is now handled by Firebase Auth (no more hardcoded passwords!)
+let complaintsData = {};
 
 // --- SECURITY: XSS Sanitization ---
 function sanitizeHTML(str) {
@@ -20,7 +34,6 @@ function sanitizeHTML(str) {
 
 // --- UTILITY FUNCTIONS ---
 
-// Skeleton Loader Helper
 function showSkeleton(containerId, count = 3, type = 'card') {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -48,10 +61,7 @@ function showSkeleton(containerId, count = 3, type = 'card') {
     }
 }
 
-// Toast Notification
-// Toast Notification
 function showToast(message, type = 'success') {
-    // Create or get toast container
     let container = document.getElementById('toast-container');
     if (!container) {
         container = document.createElement('div');
@@ -60,11 +70,9 @@ function showToast(message, type = 'success') {
         document.body.appendChild(container);
     }
 
-    // Create toast
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
 
-    // Icon mapping
     const icons = {
         success: 'fa-check-circle',
         error: 'fa-exclamation-circle',
@@ -79,14 +87,12 @@ function showToast(message, type = 'success') {
 
     container.appendChild(toast);
 
-    // Auto remove after 3 seconds
     setTimeout(() => {
         toast.classList.add('removing');
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
 
-// Form Validation Helper
 function validateInput(input, rules = {}) {
     const value = input.value.trim();
     let isValid = true;
@@ -98,21 +104,8 @@ function validateInput(input, rules = {}) {
     } else if (rules.minLength && value.length < rules.minLength) {
         isValid = false;
         errorMsg = `ต้องมีอย่างน้อย ${rules.minLength} ตัวอักษร`;
-    } else if (rules.maxLength && value.length > rules.maxLength) {
-        isValid = false;
-        errorMsg = `ต้องไม่เกิน ${rules.maxLength} ตัวอักษร`;
-    } else if (rules.pattern && !rules.pattern.test(value)) {
-        isValid = false;
-        errorMsg = rules.patternMsg || 'รูปแบบไม่ถูกต้อง';
-    } else if (rules.min !== undefined && parseFloat(value) < rules.min) {
-        isValid = false;
-        errorMsg = `ค่าต้องไม่น้อยกว่า ${rules.min}`;
-    } else if (rules.max !== undefined && parseFloat(value) > rules.max) {
-        isValid = false;
-        errorMsg = `ค่าต้องไม่เกิน ${rules.max}`;
     }
 
-    // Update UI
     if (isValid && value) {
         input.classList.remove('invalid');
         input.classList.add('valid');
@@ -128,19 +121,13 @@ function validateInput(input, rules = {}) {
             input.parentElement.appendChild(errorEl);
         }
         errorEl.textContent = errorMsg;
-    } else {
-        input.classList.remove('valid', 'invalid');
-        const errorEl = input.parentElement.querySelector('.input-error');
-        if (errorEl) errorEl.remove();
     }
 
     return isValid;
 }
 
-
 // --- AUTH & SESSION (Firebase Authentication) ---
 
-// Login with Firebase Email/Password
 window.checkLogin = async () => {
     const emailInput = document.getElementById('emailInput');
     const passwordInput = document.getElementById('passwordInput');
@@ -157,20 +144,21 @@ window.checkLogin = async () => {
         return;
     }
 
-    // Loading state
     loginBtn.disabled = true;
     loginBtnText.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Signing in...';
     loginError.classList.add('hidden');
 
     try {
-        await signInWithEmailAndPassword(auth, email, password);
-        // Success - onAuthStateChanged will handle the UI
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // Get ID token for API calls
+        const token = await userCredential.user.getIdToken();
+        setAuthToken(token);
+
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
         Toast.fire({ icon: 'success', title: 'เข้าสู่ระบบสำเร็จ' });
     } catch (error) {
         console.error('Login error:', error);
 
-        // Show user-friendly error message
         let errorMsg = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             errorMsg = 'Email หรือ Password ไม่ถูกต้อง';
@@ -183,30 +171,29 @@ window.checkLogin = async () => {
         loginError.textContent = errorMsg;
         loginError.classList.remove('hidden');
 
-        // Reset button
         loginBtn.disabled = false;
         loginBtnText.innerHTML = 'Sign In';
     }
 };
 
-// Check Session using Firebase Auth State
 window.checkSession = () => {
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // User is signed in
+            // Get and set auth token
+            const token = await user.getIdToken();
+            setAuthToken(token);
+
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('flex');
             initRealtimeListeners();
             window.switchTab('overview');
 
-            // Update welcome message with email
             const welcomeEl = document.querySelector('#view-overview h2');
             if (welcomeEl) {
                 welcomeEl.innerHTML = `สวัสดี <span class="text-brand-500">${user.email.split('@')[0]}</span>`;
             }
         } else {
-            // User is signed out
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('hidden');
             document.getElementById('dashboard').classList.remove('flex');
@@ -214,11 +201,10 @@ window.checkSession = () => {
     });
 };
 
-// Logout with Firebase
 window.logout = async () => {
     try {
         await signOut(auth);
-        // onAuthStateChanged will handle the UI
+        setAuthToken(null);
         const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
         Toast.fire({ icon: 'info', title: 'ออกจากระบบแล้ว' });
     } catch (error) {
@@ -230,12 +216,11 @@ window.logout = async () => {
 window.toggleSidebar = () => {
     const sb = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
-    // Check using the new class from admin.html
     if (sb.classList.contains('-translate-x-[110%]')) {
-        sb.classList.remove('-translate-x-[110%]'); // Open
+        sb.classList.remove('-translate-x-[110%]');
         overlay.classList.remove('hidden');
     } else {
-        sb.classList.add('-translate-x-[110%]'); // Close
+        sb.classList.add('-translate-x-[110%]');
         overlay.classList.add('hidden');
     }
 };
@@ -255,7 +240,6 @@ window.switchTab = (tab) => {
         activeBtn.classList.remove('text-slate-500');
     }
 
-    // Auto close sidebar on mobile if open
     if (window.innerWidth < 768) {
         const sb = document.getElementById('sidebar');
         if (!sb.classList.contains('-translate-x-[110%]')) {
@@ -264,12 +248,10 @@ window.switchTab = (tab) => {
     }
 };
 
-// ... (Realtime Listeners & Actions preserved) ...
-
 window.toggleDarkMode = () => {
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
-    localStorage.theme = isDark ? 'dark' : 'light'; // Use 'theme' to match main.js
+    localStorage.theme = isDark ? 'dark' : 'light';
 
     const btn = document.getElementById('darkModeBtn');
     if (btn) {
@@ -279,7 +261,6 @@ window.toggleDarkMode = () => {
     }
 };
 
-// Check Dark Mode on Load
 if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
     document.documentElement.classList.add('dark');
     const btn = document.getElementById('darkModeBtn');
@@ -295,11 +276,9 @@ window.openNewsDetail = (key) => {
     document.getElementById('news-modal-cat').innerText = item.category;
     document.getElementById('news-modal-title').innerText = item.title;
 
-    // Linkify and handle newlines
     let detailHtml = item.detail || 'ไม่มีรายละเอียด';
-    // Handle both actual newlines and escaped \n strings from Firebase
-    detailHtml = detailHtml.replace(/\\n/g, '<br>');  // Escaped \n from Firebase
-    detailHtml = detailHtml.replace(/\n/g, '<br>');   // Actual newlines
+    detailHtml = detailHtml.replace(/\\n/g, '<br>');
+    detailHtml = detailHtml.replace(/\n/g, '<br>');
     detailHtml = detailHtml.replace(/(https?:\/\/[^\s<]+|www\.[^\s<]+)/g, (match) => {
         let url = match;
         if (!url.startsWith('http')) url = 'https://' + url;
@@ -307,28 +286,22 @@ window.openNewsDetail = (key) => {
     });
 
     document.getElementById('news-modal-detail').innerHTML = detailHtml;
-
     document.getElementById('news-modal').classList.remove('hidden');
 }
 
-// --- REALTIME LISTENERS ---
+// --- REALTIME LISTENERS VIA POLLING ---
 function initRealtimeListeners() {
-    // ... (ส่วน Listeners อื่นๆ เหมือนเดิม ไม่ต้องแก้) ...
-    // Complaints, Policies, QA, Announcement, Activities, Members โค้ดเดิม...
 
-    // Copy Listeners เดิมมาใส่ตรงนี้ได้เลยครับ หรือใช้ไฟล์เต็มด้านล่าง
-    // เพื่อความชัวร์ ผมใส่ให้ครบเลยครับ
+    // Start polling
+    startPolling();
 
     // 1. Complaints
-    // Show initial skeleton
     const complaintTbody = document.getElementById('complaintTable');
     if (complaintTbody) showSkeleton('complaintTable', 5, 'table');
 
-    onValue(ref(db, 'complaints'), (snapshot) => {
-        const data = snapshot.val();
+    onValue('complaints', (data) => {
         complaintsData = data || {};
 
-        // Update Stats Only
         let pendingCount = 0; let doneCount = 0;
         if (data) {
             Object.values(data).forEach(item => {
@@ -350,10 +323,7 @@ function initRealtimeListeners() {
             }
         }
 
-        // Render Table based on current filter
         window.renderComplaintsTable(window.currentComplaintFilter || 'All');
-
-        // Update dashboard recent complaints
         renderRecentComplaints();
     });
 
@@ -362,7 +332,6 @@ function initRealtimeListeners() {
         const loadingEl = document.getElementById('complaintLoading');
         if (loadingEl) loadingEl.classList.add('hidden');
 
-        // Clear skeleton FIRST, then fade
         tbody.innerHTML = '';
         tbody.style.opacity = '0';
 
@@ -375,7 +344,6 @@ function initRealtimeListeners() {
 
         let keys = Object.keys(data).reverse();
 
-        // Filter Logic
         if (filterStatus !== 'All') {
             keys = keys.filter(key => data[key].status === filterStatus);
         }
@@ -394,18 +362,17 @@ function initRealtimeListeners() {
             tbody.innerHTML += `
                 <tr class="hover:bg-slate-50 dark:hover:bg-white/5 transition border-b border-slate-50 dark:border-white/5 last:border-0 group">
                     <td class="p-6 font-mono text-slate-400 text-xs">${new Date(item.timestamp).toLocaleDateString('th-TH')}</td>
-                    <td class="p-6 font-mono text-brand-600 dark:text-brand-400 font-bold text-xs">#${item.ticketId || '-'}</td>
+                    <td class="p-6 font-mono text-brand-600 dark:text-brand-400 font-bold text-xs">${item.ticket_id || item.ticketId || '-'}</td>
                     <td class="p-6 font-bold text-slate-800 dark:text-white">${sanitizeHTML(item.topic)}</td>
                     <td class="p-6"><span class="bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-lg text-xs font-bold">${sanitizeHTML(item.name) || 'Anonymous'}</span></td>
-                    <td class="p-6"><select onchange="window.updateStatus('complaints/${key}', this.value)" class="${badgeClass} px-3 py-1.5 rounded-lg text-xs font-bold border-none cursor-pointer outline-none appearance-none hover:opacity-80 transition"><option value="Pending" ${item.status === 'Pending' ? 'selected' : ''}>Wait</option><option value="In Progress" ${item.status === 'In Progress' ? 'selected' : ''}>Doing</option><option value="Done" ${item.status === 'Done' ? 'selected' : ''}>Done</option><option value="Completed" ${item.status === 'Completed' ? 'selected' : ''}>Completed</option></select></td>
+                    <td class="p-6"><select onchange="window.updateStatus('${key}', 'complaints', this.value)" class="${badgeClass} px-3 py-1.5 rounded-lg text-xs font-bold border-none cursor-pointer outline-none appearance-none hover:opacity-80 transition"><option value="Pending" ${item.status === 'Pending' ? 'selected' : ''}>Wait</option><option value="In Progress" ${item.status === 'In Progress' ? 'selected' : ''}>Doing</option><option value="Done" ${item.status === 'Done' ? 'selected' : ''}>Done</option><option value="Completed" ${item.status === 'Completed' ? 'selected' : ''}>Completed</option></select></td>
                     <td class="p-6 flex items-center gap-2">
                          <button onclick="window.showDetail('${key}', '${item.topic}', '${(item.detail || '').replace(/'/g, "\\'")}', '${(item.response || '').replace(/'/g, "\\'")}')" class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/20 dark:text-brand-400 hover:bg-brand-100 dark:hover:bg-brand-500/30 flex items-center justify-center transition"><i class="fas fa-eye"></i></button>
-                         <button onclick="window.deleteItem('complaints/${key}')" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 dark:bg-white/5 dark:text-slate-500 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 flex items-center justify-center transition"><i class="fas fa-trash-alt"></i></button>
+                         <button onclick="window.deleteItem('${key}', 'complaints')" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 dark:bg-white/5 dark:text-slate-500 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 flex items-center justify-center transition"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>`;
         });
 
-        // Fade in after rendering
         setTimeout(() => {
             tbody.style.opacity = '1';
             tbody.style.transition = 'opacity 0.3s ease-in-out';
@@ -416,8 +383,7 @@ function initRealtimeListeners() {
     const policyGrid = document.getElementById('policyGrid');
     if (policyGrid) showSkeleton('policyGrid', 6, 'grid');
 
-    onValue(ref(db, 'policies'), (snapshot) => {
-        const data = snapshot.val();
+    onValue('policies', (data) => {
         policiesData = data || {};
         const grid = document.getElementById('policyGrid');
 
@@ -426,6 +392,7 @@ function initRealtimeListeners() {
 
         if (document.getElementById('stat-policy')) document.getElementById('stat-policy').innerText = data ? Object.keys(data).length : 0;
         if (!data) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">ว่างเปล่า</div>'; grid.style.opacity = '1'; return; }
+
         Object.keys(data).forEach(key => {
             const item = data[key];
             let color = item.status === 'Completed' ? 'bg-green-500' : (item.status === 'In Progress' ? 'bg-blue-500' : 'bg-yellow-500');
@@ -434,7 +401,7 @@ function initRealtimeListeners() {
                 <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-white/5 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative group">
                     <div class="absolute top-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-xl p-1.5 shadow-sm z-10">
                         <button onclick="window.openEditPolicy('${key}')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition"><i class="fas fa-edit"></i></button>
-                        <button onclick="window.deleteItem('policies/${key}')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"><i class="fas fa-trash-alt"></i></button>
+                        <button onclick="window.deleteItem('${key}', 'policies')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"><i class="fas fa-trash-alt"></i></button>
                     </div>
                     ${imgHtml}
                     <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300">${item.status}</span>
@@ -457,8 +424,7 @@ function initRealtimeListeners() {
     const qaTable = document.getElementById('qaTable');
     if (qaTable) showSkeleton('qaTable', 4, 'table');
 
-    onValue(ref(db, 'qa'), (snapshot) => {
-        const data = snapshot.val();
+    onValue('qa', (data) => {
         qaData = data || {};
 
         let waitCount = 0;
@@ -503,7 +469,7 @@ function initRealtimeListeners() {
                     <td class="p-6 text-sm leading-relaxed">${answerHtml}</td>
                     <td class="p-6 flex gap-2">
                         <button onclick="window.openReplyQA('${key}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/30 flex items-center justify-center transition"><i class="fas fa-reply"></i></button>
-                        <button onclick="window.deleteItem('qa/${key}')" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 dark:bg-white/5 dark:text-slate-500 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 flex items-center justify-center transition"><i class="fas fa-trash-alt"></i></button>
+                        <button onclick="window.deleteItem('${key}', 'qa')" class="w-8 h-8 rounded-lg bg-slate-50 text-slate-400 dark:bg-white/5 dark:text-slate-500 hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/20 dark:hover:text-red-400 flex items-center justify-center transition"><i class="fas fa-trash-alt"></i></button>
                     </td>
                 </tr>`;
         });
@@ -515,20 +481,24 @@ function initRealtimeListeners() {
     };
 
     // 4. Announcement
-    onValue(ref(db, 'announcement'), (snapshot) => {
-        const data = snapshot.val() || {};
-        document.getElementById('annoActive').checked = data.active || false;
-        document.getElementById('annoTitle').value = data.title || '';
-        document.getElementById('annoDetail').value = data.detail || '';
-        document.getElementById('annoImage').value = data.image || '';
+    onValue('announcement', (data) => {
+        if (!data) data = {};
+        const annoActive = document.getElementById('annoActive');
+        const annoTitle = document.getElementById('annoTitle');
+        const annoDetail = document.getElementById('annoDetail');
+        const annoImage = document.getElementById('annoImage');
+
+        if (annoActive) annoActive.checked = data.active || false;
+        if (annoTitle) annoTitle.value = data.title || '';
+        if (annoDetail) annoDetail.value = data.detail || '';
+        if (annoImage) annoImage.value = data.image || '';
     });
 
     // 5. Activities (News)
     const activityGrid = document.getElementById('activityGrid');
     if (activityGrid) showSkeleton('activityGrid', 6, 'grid');
 
-    onValue(ref(db, 'activities'), (snapshot) => {
-        const data = snapshot.val();
+    onValue('activities', (data) => {
         const grid = document.getElementById('activityGrid');
 
         grid.innerHTML = '';
@@ -536,17 +506,14 @@ function initRealtimeListeners() {
 
         if (!data) { grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">ไม่พบข่าวสาร</div>'; grid.style.opacity = '1'; return; }
 
-        // Sort by timestamp desc (assuming keys are somewhat chronological or we can sort if needed)
         const keys = Object.keys(data).reverse();
 
         keys.forEach(key => {
             const item = data[key];
-            // Encode item data for passing to function
-            const itemStr = encodeURIComponent(JSON.stringify(item));
 
             grid.innerHTML += `
                 <div onclick="window.openNewsDetail('${key}')" class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm overflow-hidden group relative border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 cursor-pointer">
-                    <button onclick="event.stopPropagation(); window.deleteItem('activities/${key}')" class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur rounded-xl w-10 h-10 text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition z-10 flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
+                    <button onclick="event.stopPropagation(); window.deleteItem('${key}', 'activities')" class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur rounded-xl w-10 h-10 text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition z-10 flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
                     <div class="h-48 bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
                         <img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
@@ -559,7 +526,6 @@ function initRealtimeListeners() {
                 </div>`;
         });
 
-        // Store data globally for access
         window.newsData = data;
 
         setTimeout(() => {
@@ -567,7 +533,6 @@ function initRealtimeListeners() {
             grid.style.transition = 'opacity 0.3s ease-in-out';
         }, 50);
 
-        // Update dashboard stats
         updateAdditionalStats();
     });
 
@@ -575,8 +540,7 @@ function initRealtimeListeners() {
     const memberGrid = document.getElementById('memberGrid');
     if (memberGrid) showSkeleton('memberGrid', 6, 'grid');
 
-    onValue(ref(db, 'members'), (snapshot) => {
-        const data = snapshot.val();
+    onValue('members', (data) => {
         membersData = data || {};
         const grid = document.getElementById('memberGrid');
 
@@ -590,7 +554,7 @@ function initRealtimeListeners() {
                 <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-100 dark:border-white/5 hover:shadow-lg hover:-translate-y-1 transition relative group text-center">
                     <div class="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition bg-white/80 dark:bg-slate-900/80 backdrop-blur p-1 rounded-xl shadow-sm z-10">
                         <button onclick="window.openEditMember('${key}')" class="text-slate-400 hover:text-brand-500 w-8 h-8 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition"><i class="fas fa-edit"></i></button>
-                        <button onclick="window.deleteItem('members/${key}')" class="text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition"><i class="fas fa-trash-alt"></i></button>
+                        <button onclick="window.deleteItem('${key}', 'members')" class="text-slate-400 hover:text-red-500 w-8 h-8 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 transition"><i class="fas fa-trash-alt"></i></button>
                     </div>
                     
                     <div class="relative w-24 h-24 mx-auto mb-4">
@@ -608,13 +572,11 @@ function initRealtimeListeners() {
             grid.style.transition = 'opacity 0.3s ease-in-out';
         }, 50);
 
-        // Update dashboard stats
         updateAdditionalStats();
     });
 
-    // 7. Maintenance (อัปเดต UI จากฐานข้อมูล)
-    onValue(ref(db, 'maintenance'), (snapshot) => {
-        const status = snapshot.val();
+    // 7. Maintenance
+    onValue('maintenance', (status) => {
         const toggle = document.getElementById('maintenanceToggle');
         const text = document.getElementById('maintenanceStatusText');
         const dot = document.getElementById('maintenanceDot');
@@ -632,8 +594,7 @@ function initRealtimeListeners() {
     });
 
     // 8. Events (Calendar)
-    onValue(ref(db, 'events'), (snapshot) => {
-        const data = snapshot.val();
+    onValue('events', (data) => {
         eventsData = data || {};
         const container = document.getElementById('adminEventList');
         if (!container) return;
@@ -645,7 +606,6 @@ function initRealtimeListeners() {
             return;
         }
 
-        // Sort by date
         const sorted = Object.keys(data).sort((a, b) => data[a].date.localeCompare(data[b].date));
 
         sorted.forEach(key => {
@@ -668,10 +628,12 @@ function initRealtimeListeners() {
                             <span class="text-xs text-slate-400 ml-2"><i class="far fa-clock"></i> ${item.time || 'All Day'}</span>
                         </div>
                     </div>
-                    <button onclick="window.deleteItem('events/${key}')" class="w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
+                    <button onclick="window.deleteItem('${key}', 'events')" class="w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
                 </div>
             `;
         });
+
+        updateAdditionalStats();
     });
 }
 
@@ -692,13 +654,14 @@ window.showDetail = (key, topic, detail, currentResponse) => {
         confirmButtonColor: '#2563eb',
         showCancelButton: true,
         cancelButtonText: 'ปิด',
-        preConfirm: () => {
+        preConfirm: async () => {
             const response = document.getElementById('swal-input-response').value;
             if (!response || response.trim().length < 5) {
                 Swal.showValidationMessage('คำตอบต้องมีอย่างน้อย 5 ตัวอักษร');
                 return false;
             }
-            return update(ref(db, 'complaints/' + key), { response: response });
+            await complaintsApi.update(key, { response: response });
+            return true;
         }
     }).then((result) => {
         if (result.isConfirmed) {
@@ -707,17 +670,22 @@ window.showDetail = (key, topic, detail, currentResponse) => {
     });
 }
 
-window.updateStatus = (path, status) => {
-    update(ref(db, path), { status: status }).then(() => {
+window.updateStatus = async (key, collection, status) => {
+    try {
+        if (collection === 'complaints') {
+            await complaintsApi.update(key, { status });
+        } else if (collection === 'policies') {
+            await policiesApi.update(key, { status });
+        }
         showToast('อัปเดตสถานะแล้ว!', 'success');
-    });
+    } catch (error) {
+        showToast('เกิดข้อผิดพลาด', 'error');
+    }
 }
 
-// ✅ NEW: TOGGLE MAINTENANCE WITH CONFIRMATION
-window.toggleMaintenance = (checkbox) => {
+window.toggleMaintenance = async (checkbox) => {
     const isTurningOn = checkbox.checked;
 
-    // ถามยืนยันก่อน
     Swal.fire({
         title: 'ยืนยันการเปลี่ยนสถานะ?',
         text: isTurningOn ? "คุณกำลังจะเปิดโหมดปิดปรับปรุง (ผู้ใช้ทั่วไปจะเข้าไม่ได้)" : "คุณกำลังจะปิดโหมดปิดปรับปรุง (เว็บไซต์จะออนไลน์ปกติ)",
@@ -727,36 +695,37 @@ window.toggleMaintenance = (checkbox) => {
         cancelButtonColor: '#94a3b8',
         confirmButtonText: isTurningOn ? 'ใช่, ปิดปรับปรุงเลย' : 'ใช่, เปิดใช้งานเว็บ',
         cancelButtonText: 'ยกเลิก'
-    }).then((result) => {
+    }).then(async (result) => {
         if (result.isConfirmed) {
-            // ถ้ายืนยัน -> อัปเดต Database
-            set(ref(db, 'maintenance'), isTurningOn)
-                .then(() => {
-                    const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
-                    Toast.fire({ icon: 'success', title: 'บันทึกการตั้งค่าแล้ว' });
-                });
+            try {
+                await settingsApi.set('maintenance', isTurningOn);
+                const Toast = Swal.mixin({ toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
+                Toast.fire({ icon: 'success', title: 'บันทึกการตั้งค่าแล้ว' });
+            } catch (error) {
+                showToast('เกิดข้อผิดพลาด', 'error');
+                checkbox.checked = !isTurningOn;
+            }
         } else {
-            // ถ้ายกเลิก -> ดีดสวิตช์กลับที่เดิม
             checkbox.checked = !isTurningOn;
         }
     });
 }
 
-window.saveAnnouncement = (e) => {
+window.saveAnnouncement = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData.entries());
     data.active = document.getElementById('annoActive').checked;
 
-    set(ref(db, 'announcement'), data).then(() => {
+    try {
+        await settingsApi.set('announcement', data);
         showToast('บันทึกประกาศเรียบร้อย!', 'success');
-    }).catch(err => {
+    } catch (err) {
         showToast('เกิดข้อผิดพลาด', 'error');
         console.error(err);
-    });
+    }
 }
 
-// Search Function
 window.searchTable = (tableId, text) => {
     const filter = text.toLowerCase();
     const rows = document.getElementById(tableId).getElementsByTagName('tr');
@@ -776,12 +745,12 @@ window.openReplyQA = (key) => {
     }
 }
 
-window.submitReply = (e) => {
+window.submitReply = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const answer = formData.get('answer');
+    const key = formData.get('key');
 
-    // Basic validation
     if (!answer || answer.trim().length < 5) {
         showToast('คำตอบต้องมีอย่างน้อย 5 ตัวอักษร', 'error');
         return;
@@ -794,30 +763,25 @@ window.submitReply = (e) => {
     btn.disabled = true;
     btn.classList.add('opacity-75');
 
-    update(ref(db, 'qa/' + formData.get('key')), {
-        answer: answer,
-        status: 'Answered'
-    })
-        .then(() => {
-            btn.innerHTML = '<i class="fas fa-check-circle animate-checkmark"></i> สำเร็จ!';
-            btn.classList.add('bg-green-600');
-            showToast('ตอบกลับเรียบร้อย!', 'success');
+    try {
+        await qaApi.update(key, { answer, status: 'Answered' });
+        btn.innerHTML = '<i class="fas fa-check-circle animate-checkmark"></i> สำเร็จ!';
+        btn.classList.add('bg-green-600');
+        showToast('ตอบกลับเรียบร้อย!', 'success');
 
-            setTimeout(() => {
-                window.closeModal('qaModal');
-            }, 500);
-        })
-        .catch(err => {
-            showToast('เกิดข้อผิดพลาด', 'error');
-            console.error(err);
-        })
-        .finally(() => {
-            setTimeout(() => {
-                btn.innerHTML = original;
-                btn.disabled = false;
-                btn.classList.remove('opacity-75', 'bg-green-600');
-            }, 800);
-        });
+        setTimeout(() => {
+            window.closeModal('qaModal');
+        }, 500);
+    } catch (err) {
+        showToast('เกิดข้อผิดพลาด', 'error');
+        console.error(err);
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = original;
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'bg-green-600');
+        }, 800);
+    }
 }
 
 window.openCreatePolicy = () => {
@@ -863,12 +827,11 @@ window.openEditMember = (key) => {
     }
 }
 
-window.handleFirebaseSubmit = (e, collection, modalId) => {
+window.handleFirebaseSubmit = async (e, collection, modalId) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
     const original = btn.innerHTML;
 
-    // Loading state
     btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> กำลังบันทึก...';
     btn.disabled = true;
     btn.classList.add('opacity-75');
@@ -878,16 +841,19 @@ window.handleFirebaseSubmit = (e, collection, modalId) => {
     const key = data.key;
     delete data.key;
 
-    let promise;
-    if (key && key.trim() !== "") {
-        promise = update(ref(db, collection + '/' + key), data);
-    } else {
-        data.timestamp = Date.now();
-        promise = push(ref(db, collection), data);
-    }
+    try {
+        let api;
+        if (collection === 'policies') api = policiesApi;
+        else if (collection === 'members') api = membersApi;
+        else if (collection === 'activities') api = activitiesApi;
+        else if (collection === 'events') api = eventsApi;
 
-    promise.then(() => {
-        // Success animation
+        if (key && key.trim() !== "") {
+            await api.update(key, data);
+        } else {
+            await api.create(data);
+        }
+
         btn.innerHTML = '<i class="fas fa-check-circle animate-checkmark"></i> สำเร็จ!';
         btn.classList.remove('opacity-75');
         btn.classList.add('bg-green-600');
@@ -897,33 +863,44 @@ window.handleFirebaseSubmit = (e, collection, modalId) => {
         setTimeout(() => {
             window.closeModal(modalId);
             e.target.reset();
-
-            // Reset validation states if any
             e.target.querySelectorAll('input, textarea, select').forEach(input => {
                 input.classList.remove('valid', 'invalid');
             });
         }, 500);
-    })
-        .catch(err => {
-            showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
-            console.error(err);
-        })
-        .finally(() => {
-            setTimeout(() => {
-                btn.innerHTML = original;
-                btn.disabled = false;
-                btn.classList.remove('opacity-75', 'bg-green-600');
-            }, 800);
-        });
+    } catch (err) {
+        showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+        console.error(err);
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = original;
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'bg-green-600');
+        }, 800);
+    }
 }
 
-window.deleteItem = (path) => {
+window.deleteItem = (key, collection) => {
     Swal.fire({
         title: 'ยืนยันลบ?', text: "ไม่สามารถกู้คืนได้นะ", icon: 'warning',
         showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#cbd5e1',
         confirmButtonText: 'ลบเลย', cancelButtonText: 'ยกเลิก'
-    }).then((result) => {
-        if (result.isConfirmed) { remove(ref(db, path)); }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                let api;
+                if (collection === 'policies') api = policiesApi;
+                else if (collection === 'members') api = membersApi;
+                else if (collection === 'complaints') api = complaintsApi;
+                else if (collection === 'activities') api = activitiesApi;
+                else if (collection === 'qa') api = qaApi;
+                else if (collection === 'events') api = eventsApi;
+
+                await api.delete(key);
+                showToast('ลบสำเร็จ!', 'success');
+            } catch (error) {
+                showToast('เกิดข้อผิดพลาด', 'error');
+            }
+        }
     });
 }
 
@@ -945,15 +922,14 @@ window.filterQA = (status) => {
 window.exportComplaintsCSV = () => {
     if (!complaintsData) return;
 
-    // Header
     let csvContent = "data:text/csv;charset=utf-8,Date,Ticket ID,Topic,Reporter,Detail,Status,Response\n";
 
     Object.values(complaintsData).forEach(item => {
         const date = new Date(item.timestamp).toLocaleDateString('th-TH');
         const row = [
             date,
-            item.ticketId || '-',
-            `"${(item.topic || '').replace(/"/g, '""')}"`, // Escape quotes
+            item.ticket_id || item.ticketId || '-',
+            `"${(item.topic || '').replace(/"/g, '""')}"`,
             `"${(item.name || 'Anonymous').replace(/"/g, '""')}"`,
             `"${(item.detail || '').replace(/"/g, '""')}"`,
             item.status,
@@ -971,21 +947,6 @@ window.exportComplaintsCSV = () => {
     document.body.removeChild(link);
 };
 
-window.toggleDarkMode = () => {
-    document.documentElement.classList.toggle('dark');
-    const isDark = document.documentElement.classList.contains('dark');
-    localStorage.setItem('darkMode', isDark);
-
-    const btn = document.getElementById('darkModeBtn');
-    if (btn) {
-        btn.innerHTML = isDark
-            ? '<i class="fas fa-sun w-5 text-center text-yellow-400"></i> <span>Light Mode</span>'
-            : '<i class="fas fa-moon w-5 text-center"></i> <span>Dark Mode</span>';
-    }
-
-    // Update Graphs/Colors if needed globally
-};
-
 // Check Dark Mode on Load
 if (localStorage.getItem('darkMode') === 'true') {
     window.toggleDarkMode();
@@ -995,10 +956,9 @@ if (localStorage.getItem('darkMode') === 'true') {
 window.addEventListener('load', () => {
     window.checkSession();
     updateDateTime();
-    setInterval(updateDateTime, 60000); // Update every minute
+    setInterval(updateDateTime, 60000);
 });
 
-// Update Date/Time Display
 function updateDateTime() {
     const el = document.getElementById('currentDateTime');
     if (el) {
@@ -1015,7 +975,6 @@ function updateDateTime() {
     }
 }
 
-// Render Recent Complaints for Dashboard
 function renderRecentComplaints() {
     const container = document.getElementById('recentComplaintsList');
     if (!container || !complaintsData) return;
@@ -1058,20 +1017,16 @@ function renderRecentComplaints() {
     }).join('');
 }
 
-// Update Additional Stats
 function updateAdditionalStats() {
-    // Members count
     const membersCount = Object.keys(membersData || {}).length;
     const membersEl = document.getElementById('stat-members');
     if (membersEl) membersEl.innerText = membersCount;
 
-    // News count
     const newsEl = document.getElementById('stat-news');
     if (newsEl && window.newsData) {
         newsEl.innerText = Object.keys(window.newsData).length;
     }
 
-    // Events count
     const eventsEl = document.getElementById('stat-events');
     if (eventsEl && eventsData) {
         eventsEl.innerText = Object.keys(eventsData).length;

@@ -1,5 +1,13 @@
-import { ref, push, onValue, query, limitToLast, get, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { db } from "./config.js";
+// --- Main.js (Turso Version) ---
+// Uses Turso API via polling instead of Firebase Realtime Database
+
+import {
+    polling,
+    startPolling,
+    complaints as complaintsApi,
+    qa as qaApi,
+    onValue
+} from "./turso-api.js";
 
 // --- CACHED DATA (Optimization: Reduces redundant DB calls) ---
 let membersData = {};
@@ -151,16 +159,9 @@ window.switchComplaintMode = (mode) => {
     }
 };
 
-// Generate unique Ticket ID
-function generateTicketId() {
-    return 'TK-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();
-}
-
 // --- SECURITY: Enhanced Cooldown System ---
-// Uses both localStorage AND a hash-based fingerprint to prevent bypass
 const COMPLAINT_COOLDOWN_MS = 10 * 60 * 1000; // 10 minutes
 
-// Generate a simple browser fingerprint hash
 function getBrowserFingerprint() {
     const data = [
         navigator.userAgent,
@@ -170,12 +171,11 @@ function getBrowserFingerprint() {
         navigator.hardwareConcurrency || 'unknown'
     ].join('|');
 
-    // Simple hash function
     let hash = 0;
     for (let i = 0; i < data.length; i++) {
         const char = data.charCodeAt(i);
         hash = ((hash << 5) - hash) + char;
-        hash = hash & hash; // Convert to 32bit integer
+        hash = hash & hash;
     }
     return 'fp_' + Math.abs(hash).toString(36);
 }
@@ -184,11 +184,8 @@ function checkComplaintCooldown() {
     const fingerprint = getBrowserFingerprint();
     const storageKey = 'lastComplaintSubmit_' + fingerprint;
     const lastSubmit = localStorage.getItem(storageKey);
-
-    // Also check the generic key (backwards compatibility)
     const genericLastSubmit = localStorage.getItem('lastComplaintSubmit');
 
-    // Use the most recent timestamp from either source
     const timestamps = [lastSubmit, genericLastSubmit]
         .filter(Boolean)
         .map(t => parseInt(t))
@@ -208,21 +205,17 @@ function checkComplaintCooldown() {
     return { canSubmit: true };
 }
 
-// Save cooldown with fingerprint
 function saveCooldownTimestamp() {
     const fingerprint = getBrowserFingerprint();
     const now = Date.now().toString();
-    // Save to both fingerprinted and generic keys
     localStorage.setItem('lastComplaintSubmit_' + fingerprint, now);
     localStorage.setItem('lastComplaintSubmit', now);
 }
 
-
-// Submit complaint form (Single consolidated function)
+// Submit complaint form (Using Turso API)
 window.submitComplaint = async (e) => {
     e.preventDefault();
 
-    // Prevent double submission
     if (isSubmittingComplaint) return;
 
     const form = e.target;
@@ -260,20 +253,17 @@ window.submitComplaint = async (e) => {
     btn.disabled = true;
 
     const formData = new FormData(form);
-    const ticketId = '#' + generateTicketId();
 
     const data = {
-        ticketId: ticketId,
         topic: formData.get('topic'),
         name: formData.get('name') || 'Anonymous',
-        detail: formData.get('detail'),
-        status: 'Pending',
-        timestamp: Date.now(),
-        createdAt: new Date().toISOString()
+        detail: formData.get('detail')
     };
 
     try {
-        await push(ref(db, 'complaints'), data);
+        // Use Turso API
+        const result = await complaintsApi.create(data);
+        const ticketId = result.ticketId;
 
         Swal.fire({
             icon: 'success',
@@ -297,8 +287,6 @@ window.submitComplaint = async (e) => {
 
         form.reset();
         detail.classList.remove('valid', 'invalid');
-
-        // Save cooldown timestamp using fingerprint
         saveCooldownTimestamp();
     } catch (error) {
         console.error('Error submitting complaint:', error);
@@ -315,23 +303,17 @@ window.submitComplaint = async (e) => {
     }
 };
 
-// Check ticket status
+// Check ticket status (Using Turso API)
 window.checkTicket = async () => {
     const input = document.getElementById('trackInput');
     const resultDiv = document.getElementById('trackResult');
     if (!input) return;
 
     let ticketId = input.value.trim().toUpperCase();
-
-    // Clean up the ticket ID - remove # and ensure TK- prefix
-    ticketId = ticketId.replace(/^#/, ''); // Remove leading #
-
-    // If user just typed the code part, add TK- prefix
+    ticketId = ticketId.replace(/^#/, '');
     if (!ticketId.startsWith('TK-')) {
         ticketId = 'TK-' + ticketId;
     }
-
-    // Add # prefix to match Firebase storage format (#TK-XXXXX)
     ticketId = '#' + ticketId;
 
     if (!ticketId || ticketId === '#TK-') {
@@ -351,24 +333,8 @@ window.checkTicket = async () => {
     }
 
     try {
-        // Fetch all complaints and search for matching ticketId
-        // This approach doesn't require Firebase index setup
-        const snapshot = await get(ref(db, 'complaints'));
-
-        let foundData = null;
-
-        if (snapshot.exists()) {
-            const allComplaints = snapshot.val();
-            // Search through all complaints for matching ticketId
-            for (const key in allComplaints) {
-                const complaint = allComplaints[key];
-                // Compare ticketId (case-insensitive)
-                if (complaint.ticketId && complaint.ticketId.toUpperCase() === ticketId.toUpperCase()) {
-                    foundData = complaint;
-                    break;
-                }
-            }
-        }
+        // Use Turso API
+        const foundData = await complaintsApi.getByTicket(ticketId);
 
         if (resultDiv) {
             resultDiv.classList.remove('hidden');
@@ -397,7 +363,6 @@ window.checkTicket = async () => {
         };
         const status = statusConfig[data.status] || statusConfig['Pending'];
 
-        // Update result display
         const iconEl = document.getElementById('trackStatusIcon');
         const titleEl = document.getElementById('trackStatusTitle');
         const descEl = document.getElementById('trackStatusDesc');
@@ -471,7 +436,6 @@ function updateStats() {
     const memberCount = Object.keys(membersData).length;
     const activeComplaints = Object.values(complaintsData).filter(c => c.status !== 'Done' && c.status !== 'Completed').length;
 
-    // Update main stats
     if (document.getElementById("statSuccess")) {
         animateValue("statSuccess", parseInt(document.getElementById("statSuccess").innerText) || 0, successRate, 1000);
         animateValue("statMember", parseInt(document.getElementById("statMember").innerText) || 0, memberCount, 1000);
@@ -480,7 +444,6 @@ function updateStats() {
         if (barEl) barEl.style.width = successRate + '%';
     }
 
-    // Update hero card stats
     if (document.getElementById("heroStatSuccess")) {
         document.getElementById("heroStatSuccess").innerText = successRate;
     }
@@ -492,14 +455,13 @@ function updateStats() {
     }
 }
 
-// --- OPTIMIZED REALTIME LISTENERS (Targeted paths instead of root) ---
+// --- REALTIME LISTENERS VIA POLLING ---
 
 // 1. Policies Listener
 const policyList = document.getElementById('policyList');
 if (policyList) showSkeleton('policyList', 3, 'policy');
 
-onValue(ref(db, 'policies'), (snapshot) => {
-    const data = snapshot.val();
+onValue('policies', (data) => {
     policiesData = data || {};
     const container = document.getElementById('policyList');
     if (!container) {
@@ -507,13 +469,12 @@ onValue(ref(db, 'policies'), (snapshot) => {
         return;
     }
 
-    if (!data) {
+    if (!data || Object.keys(data).length === 0) {
         container.innerHTML = '<div class="text-center py-20 text-slate-400">ยังไม่มีนโยบาย</div>';
         updateStats();
         return;
     }
 
-    // Build HTML in one go (optimized DOM manipulation)
     const htmlParts = [];
     let idx = 0;
     Object.values(data).forEach(item => {
@@ -548,7 +509,6 @@ onValue(ref(db, 'policies'), (snapshot) => {
     container.innerHTML = htmlParts.join('');
     container.style.opacity = '0';
 
-    // Animate progress bars
     idx = 0;
     Object.values(data).forEach(item => {
         idx++;
@@ -570,8 +530,7 @@ onValue(ref(db, 'policies'), (snapshot) => {
 const teamGrid = document.getElementById('teamGrid');
 if (teamGrid) showSkeleton('teamGrid', 6, 'card');
 
-onValue(ref(db, 'members'), (snapshot) => {
-    const data = snapshot.val();
+onValue('members', (data) => {
     membersData = data || {};
     const container = document.getElementById('teamGrid');
     if (!container) {
@@ -579,7 +538,7 @@ onValue(ref(db, 'members'), (snapshot) => {
         return;
     }
 
-    if (!data) {
+    if (!data || Object.keys(data).length === 0) {
         container.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">ไม่พบข้อมูลสมาชิก</div>';
         updateStats();
         return;
@@ -615,8 +574,8 @@ onValue(ref(db, 'members'), (snapshot) => {
 });
 
 // 3. Complaints Listener (for stats only on main page)
-onValue(ref(db, 'complaints'), (snapshot) => {
-    complaintsData = snapshot.val() || {};
+onValue('complaints', (data) => {
+    complaintsData = data || {};
     updateStats();
 });
 
@@ -624,14 +583,13 @@ onValue(ref(db, 'complaints'), (snapshot) => {
 const activityGallery = document.getElementById('activityGallery');
 if (activityGallery) showSkeleton('activityGallery', 6, 'card');
 
-onValue(ref(db, 'activities'), (snapshot) => {
-    const data = snapshot.val();
+onValue('activities', (data) => {
     const grid = document.getElementById('activityGallery');
     if (!grid) return;
 
     window.newsData = data || {};
 
-    if (!data) {
+    if (!data || Object.keys(data).length === 0) {
         grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-10">ไม่พบข่าวสาร</div>';
         grid.style.opacity = '1';
         return;
@@ -664,16 +622,15 @@ onValue(ref(db, 'activities'), (snapshot) => {
     }, 50);
 });
 
-// 5. Q&A Listener (limit to 50)
+// 5. Q&A Listener
 const qaList = document.getElementById('qaList');
 if (qaList) showSkeleton('qaList', 4, 'qa');
 
-onValue(query(ref(db, 'qa'), limitToLast(50)), (snapshot) => {
-    const data = snapshot.val();
+onValue('qa', (data) => {
     const container = document.getElementById('qaList');
     if (!container) return;
 
-    if (!data) {
+    if (!data || Object.keys(data).length === 0) {
         container.innerHTML = '<div class="p-8 text-center text-slate-400 border border-dashed border-slate-300 rounded-3xl">ยังไม่มีคำถาม เป็นคนแรกเลย!</div>';
         return;
     }
@@ -695,7 +652,7 @@ onValue(query(ref(db, 'qa'), limitToLast(50)), (snapshot) => {
                </div>`
             : '';
 
-        const timestamp = item.timestamp || item.createdAt;
+        const timestamp = item.timestamp || item.created_at;
         const dateStr = timestamp ? new Date(timestamp).toLocaleDateString('th-TH') : '-';
 
         return `
@@ -735,7 +692,6 @@ function renderCalendar() {
 
     const htmlParts = [];
 
-    // Empty cells for previous month
     for (let i = 0; i < firstDay; i++) {
         htmlParts.push(`<div class="calendar-day empty"></div>`);
     }
@@ -818,8 +774,8 @@ window.openEventDetail = (event) => {
 };
 
 // 7. Events Listener
-onValue(ref(db, 'events'), (snapshot) => {
-    eventsData = snapshot.val() || {};
+onValue('events', (data) => {
+    eventsData = data || {};
     renderCalendar();
 
     const upcomingContainer = document.getElementById('upcomingList');
@@ -859,8 +815,7 @@ onValue(ref(db, 'events'), (snapshot) => {
 });
 
 // 8. Announcement Popup
-onValue(ref(db, 'announcement'), (snapshot) => {
-    const data = snapshot.val();
+onValue('announcement', (data) => {
     const popup = document.getElementById('announcement-popup');
     if (popup && data && data.active) {
         const titleEl = document.getElementById('anno-title');
@@ -891,8 +846,7 @@ onValue(ref(db, 'announcement'), (snapshot) => {
 });
 
 // 9. Maintenance Mode
-onValue(ref(db, 'maintenance'), (snapshot) => {
-    const isMaintenance = snapshot.val();
+onValue('maintenance', (isMaintenance) => {
     const screen = document.getElementById('maintenance-screen');
     const urlParams = new URLSearchParams(window.location.search);
     const isBypass = urlParams.get('mode') === 'admin';
@@ -910,18 +864,10 @@ onValue(ref(db, 'maintenance'), (snapshot) => {
 
 // --- Q&A FUNCTIONS ---
 
-// Thai Profanity Filter
 const BANNED_WORDS = [
     'ควย', 'หี', 'เหี้ย', 'สัตว์', 'แม่ง', 'มึง', 'กู', 'เย็ด', 'สันดาน', 'อีดอก',
     'อีสัตว์', 'ไอ้บ้า', 'อีบ้า', 'ชาติหมา', 'ส้นตีน', 'อีควาย', 'ไอ้ควาย', 'หน้าหี',
-    'เงี่ยน', 'อมควย', 'fuck', 'shit', 'bitch', 'dick', 'pussy', 'asshole',
-    'แตด', 'จิ๋ม', 'ดอ', 'ไอ้สัส', 'ไอ้เหี้ย', 'อีเหี้ย', 'เย็ดแม่', 'เย็ดเป็ด', 'เย็ดเข้',
-    'กะหรี่', 'แมงดา', 'ดอกทอง', 'ระยำ', 'จัญไร', 'เสนียด', 'สวะ', 'เสือก', 'ถุย',
-    'พ่อง', 'แม่ง', 'ไอ้เวร', 'อีเวร', 'สารเลว', 'หน้าตัวเมีย', 'ลูกกะหรี่', 'พ่อมึงตาย',
-    'แม่มึงตาย', 'ไอ้หน้าโง่', 'ปัญญาอ่อน', 'สมองหมา', 'ต่ำตม', 'แรด', 'ร่าน', 'หน้าด้าน',
-    'ตอแหล', 'ขยะสังคม', 'เปรต', 'นรก', 'ชิงหมาเกิด', 'ไอ้ขี้', 'ขี้', 'cunt', 'whore',
-    'slut', 'bastard', 'motherfucker', 'cock', 'sucker', 'wanker', 'twat', 'retard', 'faggot',
-    'nigger', 'dyke', 'bollocks', 'bugger', 'prick', 'bullshit', 'douchebag', 'idiot', 'moron', 'scum'
+    'เงี่ยน', 'อมควย', 'fuck', 'shit', 'bitch', 'dick', 'pussy', 'asshole'
 ];
 
 function containsProfanity(text) {
@@ -929,7 +875,6 @@ function containsProfanity(text) {
     return BANNED_WORDS.some(word => lowerText.includes(word.toLowerCase()));
 }
 
-// Cooldown Check (1 hour)
 const QA_COOLDOWN_MS = 60 * 60 * 1000;
 
 function checkQaCooldown() {
@@ -946,7 +891,7 @@ function checkQaCooldown() {
     return { canSubmit: true };
 }
 
-// Submit Q&A (Single consolidated function with validation)
+// Submit Q&A (Using Turso API)
 window.submitQa = async (e) => {
     e.preventDefault();
 
@@ -990,16 +935,8 @@ window.submitQa = async (e) => {
     btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>กำลังส่ง...';
     btn.disabled = true;
 
-    const data = {
-        question: question.trim(),
-        answer: '',
-        status: 'pending',
-        timestamp: Date.now(),
-        createdAt: new Date().toISOString()
-    };
-
     try {
-        await push(ref(db, 'qa'), data);
+        await qaApi.create({ question: question.trim() });
         localStorage.setItem('lastQaSubmit', Date.now().toString());
 
         Swal.fire({
@@ -1047,7 +984,6 @@ window.switchPage = (pageId) => {
     const currentResults = document.querySelectorAll('.page-section.active');
     const targetPage = document.getElementById('page-' + pageId);
 
-    // Update nav immediately
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     const navBtn = document.getElementById('nav-' + pageId);
     if (navBtn) navBtn.classList.add('active');
@@ -1215,6 +1151,9 @@ window.addEventListener('load', () => {
     window.scrollTo(0, 0);
     window.switchPage('home');
     initScrollReveal();
+
+    // Start polling for realtime updates
+    startPolling();
 });
 
 // MutationObserver for dynamic content
@@ -1228,16 +1167,9 @@ const contentObserver = new MutationObserver((mutations) => {
 
 contentObserver.observe(document.body, { childList: true, subtree: true });
 
-// --- CONNECTION STATE MONITORING ---
-onValue(ref(db, '.info/connected'), (snap) => {
-    // Only show toast after initial load to avoid showing on page load
-    if (window._connectionInitialized) {
-        if (snap.val() === true) {
-            showToast('เชื่อมต่อสำเร็จ', 'success');
-        } else {
-            showToast('ขาดการเชื่อมต่อ กำลังเชื่อมต่อใหม่...', 'warning');
-        }
-    } else {
-        window._connectionInitialized = true;
+// Connection status (simple check)
+setInterval(() => {
+    if (!navigator.onLine) {
+        showToast('ขาดการเชื่อมต่อ กำลังเชื่อมต่อใหม่...', 'warning');
     }
-});
+}, 10000);
