@@ -1,7 +1,7 @@
 import db, { generateId, now } from './db.js';
 import { verifyAuth, jsonResponse, corsHeaders } from './auth.js';
 
-export const config = { runtime: 'edge' };
+
 
 // Generate ticket ID like Firebase version
 function generateTicketId() {

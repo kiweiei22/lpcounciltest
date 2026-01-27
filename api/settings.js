@@ -1,7 +1,7 @@
 import db, { now } from './db.js';
 import { verifyAuth, jsonResponse, corsHeaders } from './auth.js';
 
-export const config = { runtime: 'edge' };
+
 
 export default async function handler(req) {
     if (req.method === 'OPTIONS') {

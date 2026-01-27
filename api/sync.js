@@ -1,7 +1,7 @@
 import db from './db.js';
 import { jsonResponse, corsHeaders } from './auth.js';
 
-export const config = { runtime: 'edge' };
+
 
 // Single endpoint to fetch all data for polling - optimized for realtime sync
 export default async function handler(req) {

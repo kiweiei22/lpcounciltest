@@ -1,7 +1,7 @@
 import db from './db.js';
 import { jsonResponse, corsHeaders } from './auth.js';
 
-export const config = { runtime: 'edge' };
+
 
 // Database schema initialization endpoint
 // Run this once to create all tables
