@@ -4,6 +4,9 @@ import { allowCors } from './auth.js';
 export default async function handler(req, res) {
     if (allowCors(req, res)) return;
 
+    // Optimize for polling: Cache for 1s, allow stale for 2s
+    res.setHeader('Cache-Control', 's-maxage=1, stale-while-revalidate=2');
+
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
