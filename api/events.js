@@ -1,15 +1,10 @@
 import db, { generateId, now } from './db.js';
-import { verifyAuth, jsonResponse, corsHeaders } from './auth.js';
+import { verifyAuth, allowCors } from './auth.js';
 
+export default async function handler(req, res) {
+    if (allowCors(req, res)) return;
 
-
-export default async function handler(req) {
-    if (req.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders() });
-    }
-
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
+    const { id } = req.query;
 
     try {
         if (req.method === 'GET') {
@@ -18,27 +13,27 @@ export default async function handler(req) {
                     sql: 'SELECT * FROM events WHERE id = ?',
                     args: [id]
                 });
-                return jsonResponse(result.rows[0] || null);
+                return res.status(200).json(result.rows[0] || null);
             }
             const result = await db.execute('SELECT * FROM events ORDER BY date ASC');
             const data = {};
             result.rows.forEach(row => { data[row.id] = row; });
-            return jsonResponse(data);
+            return res.status(200).json(data);
         }
 
         if (req.method === 'POST') {
-            const auth = await verifyAuth(req);
-            if (auth.error) return jsonResponse({ error: auth.error }, auth.status);
+            const auth = await verifyAuth(req, res);
+            if (auth.error) return res.status(auth.status).json({ error: auth.error });
 
-            const body = await req.json();
-            const id = generateId();
+            const body = req.body;
+            const newId = generateId();
             const timestamp = now();
 
             await db.execute({
                 sql: `INSERT INTO events (id, title, date, time, location, description, category, created_at, updated_at) 
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 args: [
-                    id,
+                    newId,
                     body.title,
                     body.date || '',
                     body.time || '',
@@ -50,16 +45,15 @@ export default async function handler(req) {
                 ]
             });
 
-            return jsonResponse({ id, ...body, created_at: timestamp }, 201);
+            return res.status(201).json({ id: newId, ...body, created_at: timestamp });
         }
 
         if (req.method === 'PUT') {
-            const auth = await verifyAuth(req);
-            if (auth.error) return jsonResponse({ error: auth.error }, auth.status);
+            const auth = await verifyAuth(req, res);
+            if (auth.error) return res.status(auth.status).json({ error: auth.error });
+            if (!id) return res.status(400).json({ error: 'ID required' });
 
-            if (!id) return jsonResponse({ error: 'ID required' }, 400);
-
-            const body = await req.json();
+            const body = req.body;
             const updates = [];
             const args = [];
 
@@ -78,26 +72,25 @@ export default async function handler(req) {
                 args
             });
 
-            return jsonResponse({ success: true });
+            return res.status(200).json({ success: true });
         }
 
         if (req.method === 'DELETE') {
-            const auth = await verifyAuth(req);
-            if (auth.error) return jsonResponse({ error: auth.error }, auth.status);
-
-            if (!id) return jsonResponse({ error: 'ID required' }, 400);
+            const auth = await verifyAuth(req, res);
+            if (auth.error) return res.status(auth.status).json({ error: auth.error });
+            if (!id) return res.status(400).json({ error: 'ID required' });
 
             await db.execute({
                 sql: 'DELETE FROM events WHERE id = ?',
                 args: [id]
             });
 
-            return jsonResponse({ success: true });
+            return res.status(200).json({ success: true });
         }
 
-        return jsonResponse({ error: 'Method not allowed' }, 405);
+        return res.status(405).json({ error: 'Method not allowed' });
     } catch (error) {
         console.error('Events API error:', error);
-        return jsonResponse({ error: error.message }, 500);
+        return res.status(500).json({ error: error.message });
     }
 }

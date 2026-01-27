@@ -1,35 +1,29 @@
 import db from './db.js';
-import { jsonResponse, corsHeaders } from './auth.js';
+import { allowCors } from './auth.js';
 
+export default async function handler(req, res) {
+    if (allowCors(req, res)) return;
 
-
-// Database schema initialization endpoint
-// Run this once to create all tables
-export default async function handler(req) {
-    if (req.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders() });
-    }
-
-    // Only allow POST with secret key
+    // Only allow POST
     if (req.method !== 'POST') {
-        return jsonResponse({ error: 'Use POST to initialize database' }, 405);
+        return res.status(405).json({ error: 'Use POST to initialize database' });
     }
 
-    const body = await req.json().catch(() => ({}));
-    if (body.secret !== process.env.INIT_SECRET && body.secret !== 'init-turso-db-2024') {
-        return jsonResponse({ error: 'Invalid secret' }, 401);
+    const { secret } = req.body || {};
+
+    if (secret !== process.env.INIT_SECRET && secret !== 'init-turso-db-2024') {
+        return res.status(401).json({ error: 'Invalid secret' });
     }
 
     if (!db) {
-        return jsonResponse({
-            error: 'Database connection failed. Please check TURSO_DATABASE_URL and TURSO_AUTH_TOKEN env vars in Vercel.',
-            debug_url: process.env.TURSO_DATABASE_URL ? 'URL Set' : 'URL Missing',
-            debug_token: process.env.TURSO_AUTH_TOKEN ? 'Token Set' : 'Token Missing'
-        }, 500);
+        return res.status(500).json({
+            error: 'Database connection failed. Check TURSO_DATABASE_URL/TOKEN.',
+            env_url: !!process.env.TURSO_DATABASE_URL,
+            env_token: !!process.env.TURSO_AUTH_TOKEN
+        });
     }
 
     try {
-        // Create all tables
         const queries = [
             `CREATE TABLE IF NOT EXISTS policies (
                 id TEXT PRIMARY KEY,
@@ -99,7 +93,6 @@ export default async function handler(req) {
             await db.execute(sql);
         }
 
-        // Create indexes for better performance
         const indexes = [
             'CREATE INDEX IF NOT EXISTS idx_complaints_ticket ON complaints(ticket_id)',
             'CREATE INDEX IF NOT EXISTS idx_complaints_status ON complaints(status)',
@@ -111,13 +104,13 @@ export default async function handler(req) {
             await db.execute(sql);
         }
 
-        return jsonResponse({
+        return res.status(200).json({
             success: true,
             message: 'Database initialized successfully!',
             tables: ['policies', 'members', 'complaints', 'activities', 'qa', 'events', 'settings']
         });
     } catch (error) {
         console.error('Init DB error:', error);
-        return jsonResponse({ error: error.message }, 500);
+        return res.status(500).json({ error: error.message });
     }
 }

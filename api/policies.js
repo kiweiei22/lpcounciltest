@@ -1,62 +1,49 @@
 import db, { generateId, now } from './db.js';
-import { verifyAuth, jsonResponse, corsHeaders } from './auth.js';
+import { verifyAuth, allowCors } from './auth.js';
 
+export default async function handler(req, res) {
+    if (allowCors(req, res)) return;
 
-
-export default async function handler(req) {
-    // Handle CORS preflight
-    if (req.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders() });
-    }
-
-    const url = new URL(req.url);
-    const id = url.searchParams.get('id');
+    const { id } = req.query;
 
     try {
-        // GET - List all or get by ID
         if (req.method === 'GET') {
             if (id) {
                 const result = await db.execute({
                     sql: 'SELECT * FROM policies WHERE id = ?',
                     args: [id]
                 });
-                return jsonResponse(result.rows[0] || null);
+                return res.status(200).json(result.rows[0] || null);
             }
             const result = await db.execute('SELECT * FROM policies ORDER BY created_at DESC');
-            // Convert to object format like Firebase
             const data = {};
-            result.rows.forEach(row => {
-                data[row.id] = row;
-            });
-            return jsonResponse(data);
+            result.rows.forEach(row => { data[row.id] = row; });
+            return res.status(200).json(data);
         }
 
-        // POST - Create new policy (requires auth)
         if (req.method === 'POST') {
-            const auth = await verifyAuth(req);
-            if (auth.error) return jsonResponse({ error: auth.error }, auth.status);
+            const auth = await verifyAuth(req, res);
+            if (auth.error) return res.status(auth.status).json({ error: auth.error });
 
-            const body = await req.json();
-            const id = generateId();
+            const body = req.body;
+            const newId = generateId();
             const timestamp = now();
 
             await db.execute({
                 sql: `INSERT INTO policies (id, title, detail, status, percent, image, created_at, updated_at) 
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                args: [id, body.title, body.detail || '', body.status || 'Pending', body.percent || 0, body.image || '', timestamp, timestamp]
+                args: [newId, body.title, body.detail || '', body.status || 'Pending', body.percent || 0, body.image || '', timestamp, timestamp]
             });
 
-            return jsonResponse({ id, ...body, created_at: timestamp }, 201);
+            return res.status(201).json({ id: newId, ...body, created_at: timestamp });
         }
 
-        // PUT - Update policy (requires auth)
         if (req.method === 'PUT') {
-            const auth = await verifyAuth(req);
-            if (auth.error) return jsonResponse({ error: auth.error }, auth.status);
+            const auth = await verifyAuth(req, res);
+            if (auth.error) return res.status(auth.status).json({ error: auth.error });
+            if (!id) return res.status(400).json({ error: 'ID required' });
 
-            if (!id) return jsonResponse({ error: 'ID required' }, 400);
-
-            const body = await req.json();
+            const body = req.body;
             const updates = [];
             const args = [];
 
@@ -75,27 +62,25 @@ export default async function handler(req) {
                 args
             });
 
-            return jsonResponse({ success: true });
+            return res.status(200).json({ success: true });
         }
 
-        // DELETE - Remove policy (requires auth)
         if (req.method === 'DELETE') {
-            const auth = await verifyAuth(req);
-            if (auth.error) return jsonResponse({ error: auth.error }, auth.status);
-
-            if (!id) return jsonResponse({ error: 'ID required' }, 400);
+            const auth = await verifyAuth(req, res);
+            if (auth.error) return res.status(auth.status).json({ error: auth.error });
+            if (!id) return res.status(400).json({ error: 'ID required' });
 
             await db.execute({
                 sql: 'DELETE FROM policies WHERE id = ?',
                 args: [id]
             });
 
-            return jsonResponse({ success: true });
+            return res.status(200).json({ success: true });
         }
 
-        return jsonResponse({ error: 'Method not allowed' }, 405);
+        return res.status(405).json({ error: 'Method not allowed' });
     } catch (error) {
         console.error('Policies API error:', error);
-        return jsonResponse({ error: error.message }, 500);
+        return res.status(500).json({ error: error.message });
     }
 }

@@ -1,15 +1,10 @@
-import db, { now } from './db.js';
-import { verifyAuth, jsonResponse, corsHeaders } from './auth.js';
+import db from './db.js';
+import { verifyAuth, allowCors } from './auth.js';
 
+export default async function handler(req, res) {
+    if (allowCors(req, res)) return;
 
-
-export default async function handler(req) {
-    if (req.method === 'OPTIONS') {
-        return new Response(null, { headers: corsHeaders() });
-    }
-
-    const url = new URL(req.url);
-    const key = url.searchParams.get('key');
+    const { key } = req.query;
 
     try {
         if (req.method === 'GET') {
@@ -20,12 +15,12 @@ export default async function handler(req) {
                 });
                 if (result.rows[0]) {
                     try {
-                        return jsonResponse(JSON.parse(result.rows[0].value));
+                        return res.status(200).json(JSON.parse(result.rows[0].value));
                     } catch {
-                        return jsonResponse(result.rows[0].value);
+                        return res.status(200).json(result.rows[0].value);
                     }
                 }
-                return jsonResponse(null);
+                return res.status(200).json(null);
             }
             // Get all settings
             const result = await db.execute('SELECT * FROM settings');
@@ -37,31 +32,29 @@ export default async function handler(req) {
                     data[row.key] = row.value;
                 }
             });
-            return jsonResponse(data);
+            return res.status(200).json(data);
         }
 
         if (req.method === 'PUT' || req.method === 'POST') {
-            const auth = await verifyAuth(req);
-            if (auth.error) return jsonResponse({ error: auth.error }, auth.status);
+            const auth = await verifyAuth(req, res);
+            if (auth.error) return res.status(auth.status).json({ error: auth.error });
+            if (!key) return res.status(400).json({ error: 'Key required' });
 
-            if (!key) return jsonResponse({ error: 'Key required' }, 400);
-
-            const body = await req.json();
+            const body = req.body;
             const value = typeof body === 'object' ? JSON.stringify(body) : String(body);
 
-            // Upsert
             await db.execute({
                 sql: `INSERT INTO settings (key, value) VALUES (?, ?) 
                       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
                 args: [key, value]
             });
 
-            return jsonResponse({ success: true });
+            return res.status(200).json({ success: true });
         }
 
-        return jsonResponse({ error: 'Method not allowed' }, 405);
+        return res.status(405).json({ error: 'Method not allowed' });
     } catch (error) {
         console.error('Settings API error:', error);
-        return jsonResponse({ error: error.message }, 500);
+        return res.status(500).json({ error: error.message });
     }
 }

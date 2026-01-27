@@ -1,6 +1,4 @@
 
-export const config = { runtime: 'nodejs' };
-
 export default function handler(req, res) {
     const envCheck = {
         TURSO_URL: process.env.TURSO_DATABASE_URL ? 'OK' : 'MISSING',
@@ -8,14 +6,9 @@ export default function handler(req, res) {
         NODE_VERSION: process.version
     };
 
-    return new Response(JSON.stringify({
+    res.status(200).json({
         status: 'online',
         env: envCheck,
-        message: 'API is working'
-    }), {
-        status: 200,
-        headers: {
-            'Content-Type': 'application/json'
-        }
+        message: 'API is working (Node.js Runtime)'
     });
 }

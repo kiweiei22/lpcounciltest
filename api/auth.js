@@ -1,18 +1,20 @@
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin SDK (for verifying tokens)
-// ⚠️ Add FIREBASE_SERVICE_ACCOUNT_KEY as environment variable on Vercel
-// ถ้าไม่ต้องการ verify token ฝั่ง server สามารถ skip middleware นี้ได้
-
+// Initialize Firebase Admin
 let firebaseApp;
 
 function getFirebaseAdmin() {
     if (!firebaseApp && process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
         try {
             const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-            firebaseApp = admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount)
-            });
+            // Check if already initialized to prevent errors in hot reload environments
+            if (admin.apps.length === 0) {
+                firebaseApp = admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount)
+                });
+            } else {
+                firebaseApp = admin.apps[0];
+            }
         } catch (e) {
             console.warn('Firebase Admin init failed:', e.message);
         }
@@ -20,9 +22,9 @@ function getFirebaseAdmin() {
     return firebaseApp ? admin.auth() : null;
 }
 
-// Middleware to verify Firebase ID token
-export async function verifyAuth(req) {
-    const authHeader = req.headers.get('authorization');
+// Helper: Verify Auth
+export async function verifyAuth(req, res) {
+    const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
         return { error: 'Unauthorized', status: 401 };
     }
@@ -31,8 +33,7 @@ export async function verifyAuth(req) {
     const auth = getFirebaseAdmin();
 
     if (!auth) {
-        // If Firebase Admin is not configured, skip verification (dev mode)
-        console.warn('Firebase Admin not configured, skipping auth verification');
+        console.warn('Firebase Admin not configured, skipping auth verification (Dev Mode)');
         return { user: { uid: 'dev-user' } };
     }
 
@@ -44,22 +45,23 @@ export async function verifyAuth(req) {
     }
 }
 
-// CORS headers helper
-export function corsHeaders() {
-    return {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    };
+// Helper: Standard JSON Response (wraps res)
+export function jsonResponse(res, data, status = 200) {
+    return res.status(status).json(data);
 }
 
-// JSON response helper
-export function jsonResponse(data, status = 200) {
-    return new Response(JSON.stringify(data), {
-        status,
-        headers: {
-            'Content-Type': 'application/json',
-            ...corsHeaders()
-        }
-    });
+// Helper: Allow CORS (Vercel handles this via vercel.json generally, but good for local)
+export function allowCors(req, res) {
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization'
+    );
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return true;
+    }
+    return false;
 }
