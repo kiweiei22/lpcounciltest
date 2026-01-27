@@ -5,8 +5,8 @@
     "type": "module",
     "scripts": {
         "dev": "vercel dev",
-        "build": "echo 'Static site - no build required'",
-        "start": "npx serve ."
+        "build": "node build.js",
+        "start": "npx serve dist"
     },
     "dependencies": {
         "@libsql/client": "^0.5.0",

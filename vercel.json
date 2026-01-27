@@ -1,7 +1,6 @@
 {
-  "cleanUrls": true,
   "trailingSlash": false,
-  "outputDirectory": ".",
+  "outputDirectory": "dist",
   "headers": [
     {
       "source": "/js/(.*).js",

@@ -1,4 +1,4 @@
-import { createClient } from '@libsql/client';
+import { createClient } from '@libsql/client/web';
 
 // Initialize Turso client
 // ⚠️ ใส่ credentials ของคุณใน Environment Variables บน Vercel:
