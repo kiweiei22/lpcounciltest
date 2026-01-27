@@ -1,6 +1,6 @@
-import db, { generateId, now } from './db.js';
-import { verifyAuth, allowCors } from './auth.js';
-import { filterText } from './filter.js';
+import db, { generateId, now } from '../lib/db.js';
+import { verifyAuth, allowCors } from '../lib/auth.js';
+import { filterText } from '../lib/filter.js';
 
 function generateTicketId() {
     return 'TK-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).substring(2, 6).toUpperCase();

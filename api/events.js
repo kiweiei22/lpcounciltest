@@ -1,5 +1,5 @@
-import db, { generateId, now } from './db.js';
-import { verifyAuth, allowCors } from './auth.js';
+import db, { generateId, now } from '../lib/db.js';
+import { verifyAuth, allowCors } from '../lib/auth.js';
 
 export default async function handler(req, res) {
     if (allowCors(req, res)) return;
