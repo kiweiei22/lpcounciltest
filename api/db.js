@@ -4,10 +4,21 @@ import { createClient } from '@libsql/client';
 // ⚠️ ใส่ credentials ของคุณใน Environment Variables บน Vercel:
 // TURSO_DATABASE_URL และ TURSO_AUTH_TOKEN
 
-const db = createClient({
-    url: process.env.TURSO_DATABASE_URL,
-    authToken: process.env.TURSO_AUTH_TOKEN,
-});
+const url = process.env.TURSO_DATABASE_URL;
+const authToken = process.env.TURSO_AUTH_TOKEN;
+
+let db = null;
+
+if (url) {
+    try {
+        db = createClient({ url, authToken });
+        console.log('Turso client initialized');
+    } catch (e) {
+        console.error('Failed to init Turso client:', e);
+    }
+} else {
+    console.warn('TURSO_DATABASE_URL is missing');
+}
 
 // Helper to generate unique IDs
 export function generateId() {

@@ -20,6 +20,14 @@ export default async function handler(req) {
         return jsonResponse({ error: 'Invalid secret' }, 401);
     }
 
+    if (!db) {
+        return jsonResponse({
+            error: 'Database connection failed. Please check TURSO_DATABASE_URL and TURSO_AUTH_TOKEN env vars in Vercel.',
+            debug_url: process.env.TURSO_DATABASE_URL ? 'URL Set' : 'URL Missing',
+            debug_token: process.env.TURSO_AUTH_TOKEN ? 'Token Set' : 'Token Missing'
+        }, 500);
+    }
+
     try {
         // Create all tables
         const queries = [
