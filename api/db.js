@@ -4,8 +4,8 @@ import { createClient } from '@libsql/client/web';
 // ⚠️ ใส่ credentials ของคุณใน Environment Variables บน Vercel:
 // TURSO_DATABASE_URL และ TURSO_AUTH_TOKEN
 
-const url = process.env.TURSO_DATABASE_URL;
-const authToken = process.env.TURSO_AUTH_TOKEN;
+const url = "libsql://lpdatabase-kiwzy.aws-ap-northeast-1.turso.io";
+const authToken = "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3Njk1MTQzMTcsImlkIjoiZmZmOGVhODctZmI2NS00ZGFlLWExMTEtYThmMGYzYzYwZDdlIiwicmlkIjoiZmY1MjU2YzgtYTdhNy00NTA3LThiOTAtYjQ3N2Y1ZTExZjBhIn0.CA6PVopCDHcLknro-X0_cZsPZKy3648jC60lp5hVzFndjPtrSzh1r5cJLQtN--vAWaovJ0RrT6hDhu-3FVO_DQ";
 
 let db = null;
 
