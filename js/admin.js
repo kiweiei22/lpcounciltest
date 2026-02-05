@@ -445,7 +445,7 @@ function initRealtimeListeners() {
             return;
         }
 
-        let keys = Object.keys(data);
+        let keys = Object.keys(data).reverse();
 
         if (filterStatus === 'Wait') {
             keys = keys.filter(key => data[key].status !== 'Answered');
@@ -511,11 +511,13 @@ function initRealtimeListeners() {
         keys.forEach(key => {
             const item = data[key];
 
+            const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }) : (item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }) : '-');
+
             grid.innerHTML += `
                 <div onclick="window.openNewsDetail('${key}')" class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm overflow-hidden group relative border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 cursor-pointer">
-                    <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-xl p-1.5 shadow-sm z-10">
-                        <button onclick="event.stopPropagation(); window.openEditActivity('${key}')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition"><i class="fas fa-edit"></i></button>
-                        <button onclick="event.stopPropagation(); window.deleteItem('${key}', 'activities')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"><i class="fas fa-trash-alt"></i></button>
+                    <div class="absolute top-3 right-3 flex gap-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur rounded-xl p-1.5 shadow-sm z-10">
+                        <button onclick="event.stopPropagation(); window.openEditActivity('${key}')" class="w-8 h-8 flex items-center justify-center text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="event.stopPropagation(); window.deleteItem('${key}', 'activities')" class="w-8 h-8 flex items-center justify-center text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"><i class="fas fa-trash-alt"></i></button>
                     </div>
                     <div class="h-48 bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
                         <img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
@@ -523,6 +525,7 @@ function initRealtimeListeners() {
                         <span class="absolute bottom-3 left-3 text-[10px] font-bold bg-white/90 dark:bg-black/80 text-slate-900 dark:text-white px-2 py-1 rounded-lg uppercase tracking-wider backdrop-blur-sm shadow-sm">${item.category}</span>
                     </div>
                     <div class="p-5">
+                        <p class="text-xs text-slate-400 mb-2"><i class="far fa-calendar-alt mr-1"></i>${dateStr}</p>
                         <h3 class="font-bold text-slate-800 dark:text-white line-clamp-2 text-lg mb-2 group-hover:text-blue-600 transition-colors">${item.title}</h3>
                         <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2">${item.detail || 'คลิกเพื่ออ่านรายละเอียด...'}</p>
                     </div>

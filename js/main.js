@@ -615,7 +615,9 @@ onValue('activities', (data) => {
 
     const items = Object.entries(data).map(([key, value]) => ({ key, ...value })).reverse();
 
-    const htmlParts = items.map(item => `
+    const htmlParts = items.map(item => {
+        const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }) : (item.created_at ? new Date(item.created_at).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }) : '');
+        return `
         <div onclick="window.openNewsDetail('${item.key}')" class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm overflow-hidden group relative border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 cursor-pointer">
             <div class="h-48 bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
                 <img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" loading="lazy" onerror="this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22600%22%20height%3D%22400%22%20viewBox%3D%220%200%20600%20400%22%3E%3Crect%20fill%3D%22%23cbd5e1%22%20width%3D%22600%22%20height%3D%22400%22%2F%3E%3Ctext%20fill%3D%22%2364748b%22%20font-family%3D%22sans-serif%22%20font-size%3D%2230%22%20dy%3D%2210.5%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%3ENo%20Image%3C%2Ftext%3E%3C%2Fsvg%3E'">
@@ -623,13 +625,15 @@ onValue('activities', (data) => {
                 <span class="absolute bottom-3 left-3 text-[10px] font-bold bg-white/90 dark:bg-black/80 text-slate-900 dark:text-white px-2 py-1 rounded-lg uppercase tracking-wider backdrop-blur-sm shadow-sm">${sanitizeHTML(item.category)}</span>
             </div>
             <div class="p-5">
+                <p class="text-xs text-slate-400 mb-2"><i class="far fa-calendar-alt mr-1"></i>${dateStr}</p>
                 <h3 class="font-bold text-slate-800 dark:text-white line-clamp-2 text-lg mb-2 group-hover:text-blue-600 transition-colors">${sanitizeHTML(item.title)}</h3>
                 <p class="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-3">${sanitizeHTML(item.detail) || '...'}</p>
                 <button onclick="event.stopPropagation(); window.openNewsDetail('${item.key}')" class="text-xs font-bold text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">
                     อ่านรายละเอียด <i class="fas fa-arrow-right ml-1"></i>
                 </button>
             </div>
-        </div>`);
+        </div>`;
+    });
 
     grid.innerHTML = htmlParts.join('');
     grid.style.opacity = '0';
@@ -660,7 +664,7 @@ onValue('qa', (data) => {
         return;
     }
 
-    const htmlParts = Object.values(data).map(item => {
+    const htmlParts = Object.values(data).reverse().map(item => {
         const isAnswered = item.status === 'Answered';
 
         let statusBadge = isAnswered
