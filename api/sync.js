@@ -56,11 +56,14 @@ export default async function handler(req, res) {
                 const r = await db.execute('SELECT * FROM settings');
                 result.announcement = null;
                 result.maintenance = false;
+                result.maintenanceSettings = null;
                 r.rows.forEach(row => {
                     if (row.key === 'announcement') {
                         try { result.announcement = JSON.parse(row.value); } catch { result.announcement = row.value; }
                     } else if (row.key === 'maintenance') {
                         result.maintenance = row.value === 'true' || row.value === true;
+                    } else if (row.key === 'maintenanceSettings') {
+                        try { result.maintenanceSettings = JSON.parse(row.value); } catch { result.maintenanceSettings = row.value; }
                     }
                 });
             } catch (e) {
