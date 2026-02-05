@@ -599,6 +599,29 @@ function initRealtimeListeners() {
         }
     });
 
+    // 7.1 Maintenance Settings
+    onValue('maintenanceSettings', (data) => {
+        if (!data) return;
+
+        const msgEl = document.getElementById('maintMessage');
+        const endTimeEl = document.getElementById('maintEndTime');
+        const progressEl = document.getElementById('maintProgress');
+        const progressValueEl = document.getElementById('maintProgressValue');
+        const fbEl = document.getElementById('maintFacebook');
+        const igEl = document.getElementById('maintInstagram');
+        const emailEl = document.getElementById('maintEmail');
+
+        if (msgEl) msgEl.value = data.message || '';
+        if (endTimeEl) endTimeEl.value = data.endTime || '';
+        if (progressEl) {
+            progressEl.value = data.progress || 0;
+            if (progressValueEl) progressValueEl.innerText = (data.progress || 0) + '%';
+        }
+        if (fbEl) fbEl.value = data.facebook || '';
+        if (igEl) igEl.value = data.instagram || '';
+        if (emailEl) emailEl.value = data.email || '';
+    });
+
     // 8. Events (Calendar)
     onValue('events', (data) => {
         eventsData = data || {};
@@ -715,6 +738,41 @@ window.toggleMaintenance = async (checkbox) => {
             checkbox.checked = !isTurningOn;
         }
     });
+}
+
+window.saveMaintenanceSettings = async (e) => {
+    e.preventDefault();
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    const original = btn.innerHTML;
+
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> กำลังบันทึก...';
+    btn.disabled = true;
+
+    const data = {
+        message: document.getElementById('maintMessage').value,
+        endTime: document.getElementById('maintEndTime').value,
+        progress: parseInt(document.getElementById('maintProgress').value) || 0,
+        facebook: document.getElementById('maintFacebook').value,
+        instagram: document.getElementById('maintInstagram').value,
+        email: document.getElementById('maintEmail').value
+    };
+
+    try {
+        await settingsApi.set('maintenanceSettings', data);
+        btn.innerHTML = '<i class="fas fa-check-circle"></i> บันทึกแล้ว!';
+        btn.classList.add('bg-green-600');
+        showToast('บันทึกการตั้งค่า Maintenance เรียบร้อย!', 'success');
+    } catch (error) {
+        showToast('เกิดข้อผิดพลาด', 'error');
+        console.error(error);
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = original;
+            btn.disabled = false;
+            btn.classList.remove('bg-green-600');
+        }, 1500);
+    }
 }
 
 window.saveAnnouncement = async (e) => {

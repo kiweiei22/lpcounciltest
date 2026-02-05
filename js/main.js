@@ -918,6 +918,116 @@ onValue('maintenance', (isMaintenance) => {
     }
 });
 
+// Maintenance Settings Display
+let countdownInterval = null;
+
+onValue('maintenanceSettings', (data) => {
+    if (!data) return;
+
+    // Custom Message
+    const msgEl = document.getElementById('maint-message');
+    if (msgEl && data.message) {
+        msgEl.textContent = data.message;
+        msgEl.classList.remove('hidden');
+    } else if (msgEl) {
+        msgEl.classList.add('hidden');
+    }
+
+    // Progress Bar
+    const progressContainer = document.getElementById('maint-progress-container');
+    const progressBar = document.getElementById('maint-progress-bar');
+    const progressText = document.getElementById('maint-progress-text');
+    if (progressContainer && data.progress > 0) {
+        progressContainer.classList.remove('hidden');
+        if (progressBar) progressBar.style.width = data.progress + '%';
+        if (progressText) progressText.textContent = data.progress + '%';
+    } else if (progressContainer) {
+        progressContainer.classList.add('hidden');
+    }
+
+    // Countdown Timer
+    const countdownContainer = document.getElementById('maint-countdown-container');
+    if (countdownInterval) clearInterval(countdownInterval);
+
+    if (countdownContainer && data.endTime) {
+        const endDate = new Date(data.endTime);
+        if (endDate > new Date()) {
+            countdownContainer.classList.remove('hidden');
+
+            const updateCountdown = () => {
+                const now = new Date();
+                const diff = endDate - now;
+
+                if (diff <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownContainer.classList.add('hidden');
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                document.getElementById('countdown-days').textContent = String(days).padStart(2, '0');
+                document.getElementById('countdown-hours').textContent = String(hours).padStart(2, '0');
+                document.getElementById('countdown-minutes').textContent = String(minutes).padStart(2, '0');
+                document.getElementById('countdown-seconds').textContent = String(seconds).padStart(2, '0');
+            };
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+        } else {
+            countdownContainer.classList.add('hidden');
+        }
+    } else if (countdownContainer) {
+        countdownContainer.classList.add('hidden');
+    }
+
+    // Contact Info
+    const contactContainer = document.getElementById('maint-contact-container');
+    let hasContact = false;
+
+    const fbLink = document.getElementById('maint-facebook-link');
+    if (fbLink && data.facebook) {
+        fbLink.href = data.facebook.startsWith('http') ? data.facebook : `https://facebook.com/${data.facebook}`;
+        document.getElementById('maint-facebook-text').textContent = data.facebook.replace(/https?:\/\/(www\.)?facebook\.com\/?/i, '') || 'Facebook';
+        fbLink.classList.remove('hidden');
+        hasContact = true;
+    } else if (fbLink) {
+        fbLink.classList.add('hidden');
+    }
+
+    const igLink = document.getElementById('maint-instagram-link');
+    if (igLink && data.instagram) {
+        const igHandle = data.instagram.replace('@', '');
+        igLink.href = `https://instagram.com/${igHandle}`;
+        document.getElementById('maint-instagram-text').textContent = '@' + igHandle;
+        igLink.classList.remove('hidden');
+        hasContact = true;
+    } else if (igLink) {
+        igLink.classList.add('hidden');
+    }
+
+    const emailLink = document.getElementById('maint-email-link');
+    if (emailLink && data.email) {
+        emailLink.href = `mailto:${data.email}`;
+        document.getElementById('maint-email-text').textContent = data.email;
+        emailLink.classList.remove('hidden');
+        hasContact = true;
+    } else if (emailLink) {
+        emailLink.classList.add('hidden');
+    }
+
+    if (contactContainer) {
+        if (hasContact) {
+            contactContainer.classList.remove('hidden');
+        } else {
+            contactContainer.classList.add('hidden');
+        }
+    }
+});
+
 // --- Q&A FUNCTIONS ---
 
 const BANNED_WORDS = [
