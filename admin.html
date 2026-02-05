@@ -257,7 +257,7 @@
                                         class="fas fa-plus-circle text-2xl text-blue-500 mb-2 group-hover:scale-110 transition"></i>
                                     <p class="text-xs font-bold text-blue-700 dark:text-blue-300">เพิ่มนโยบาย</p>
                                 </button>
-                                <button onclick="window.openModal('activityModal')"
+                                <button onclick="window.openCreateActivity()"
                                     class="p-4 bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 rounded-2xl text-center transition group">
                                     <i
                                         class="fas fa-newspaper text-2xl text-green-500 mb-2 group-hover:scale-110 transition"></i>
@@ -549,7 +549,7 @@
                             </h2>
                             <p class="text-slate-500 dark:text-slate-400 font-medium">Post updates & photos</p>
                         </div>
-                        <button onclick="window.openModal('activityModal')"
+                        <button onclick="window.openCreateActivity()"
                             class="bg-slate-900 dark:bg-white dark:text-slate-900 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:scale-105 transition"><i
                                 class="fas fa-plus mr-2"></i> Add News</button>
                     </header>
@@ -679,21 +679,21 @@
         class="hidden fixed inset-0 z-[70] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
         <div
             class="bg-white dark:bg-slate-800 p-8 rounded-[2rem] w-full max-w-md shadow-2xl animate-in border border-white/20">
-            <h3 class="font-bold text-2xl mb-6 text-slate-900 dark:text-white">Add News</h3>
+            <h3 id="activityModalTitle" class="font-bold text-2xl mb-6 text-slate-900 dark:text-white">Add News</h3>
             <form onsubmit="window.handleFirebaseSubmit(event, 'activities', 'activityModal')" class="space-y-4">
-                <input type="hidden" name="key">
-                <input name="title" placeholder="News Headline" required
+                <input type="hidden" name="key" id="activityKey">
+                <input name="title" id="activityTitle" placeholder="News Headline" required
                     class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
-                <select name="category"
+                <select name="category" id="activityCategory"
                     class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
                     <option value="ACADEMIC">Academic</option>
                     <option value="SPORTS">Sports</option>
                     <option value="VOLUNTEER">Volunteer</option>
                     <option value="EVENT">General</option>
                 </select>
-                <input name="image" placeholder="Image URL (Landscape)" required
+                <input name="image" id="activityImage" placeholder="Image URL (Landscape)" required
                     class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white">
-                <textarea name="detail" placeholder="News Details / Content" rows="4"
+                <textarea name="detail" id="activityDetail" placeholder="News Details / Content" rows="4"
                     class="input-modern w-full p-3 rounded-xl dark:bg-slate-900/50 dark:border-slate-700 dark:text-white"></textarea>
                 <div class="pt-4 flex gap-3">
                     <button type="button" onclick="window.closeModal('activityModal')"

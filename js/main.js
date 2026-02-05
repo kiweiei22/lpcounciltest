@@ -660,7 +660,7 @@ onValue('qa', (data) => {
         return;
     }
 
-    const htmlParts = Object.values(data).reverse().map(item => {
+    const htmlParts = Object.values(data).map(item => {
         const isAnswered = item.status === 'Answered';
 
         let statusBadge = isAnswered

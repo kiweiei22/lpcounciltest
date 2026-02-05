@@ -445,7 +445,7 @@ function initRealtimeListeners() {
             return;
         }
 
-        let keys = Object.keys(data).reverse();
+        let keys = Object.keys(data);
 
         if (filterStatus === 'Wait') {
             keys = keys.filter(key => data[key].status !== 'Answered');
@@ -513,7 +513,10 @@ function initRealtimeListeners() {
 
             grid.innerHTML += `
                 <div onclick="window.openNewsDetail('${key}')" class="bg-white dark:bg-slate-800 rounded-3xl shadow-sm overflow-hidden group relative border border-slate-100 dark:border-white/5 hover:shadow-lg transition-all duration-300 cursor-pointer">
-                    <button onclick="event.stopPropagation(); window.deleteItem('${key}', 'activities')" class="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur rounded-xl w-10 h-10 text-slate-400 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition z-10 flex items-center justify-center"><i class="fas fa-trash-alt"></i></button>
+                    <div class="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition bg-white/80 dark:bg-slate-900/80 backdrop-blur rounded-xl p-1.5 shadow-sm z-10">
+                        <button onclick="event.stopPropagation(); window.openEditActivity('${key}')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-500/10 rounded-lg transition"><i class="fas fa-edit"></i></button>
+                        <button onclick="event.stopPropagation(); window.deleteItem('${key}', 'activities')" class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"><i class="fas fa-trash-alt"></i></button>
+                    </div>
                     <div class="h-48 bg-slate-100 dark:bg-slate-700/50 relative overflow-hidden">
                         <img src="${item.image}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
                         <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
@@ -824,6 +827,19 @@ window.openEditMember = (key) => {
         document.getElementById('memberBio').value = item.bio || '';
         document.getElementById('memberModalTitle').innerText = 'แก้ไขข้อมูลสมาชิก';
         window.openModal('memberModal');
+    }
+}
+
+window.openEditActivity = (key) => {
+    const item = window.newsData ? window.newsData[key] : null;
+    if (item) {
+        document.getElementById('activityKey').value = key;
+        document.getElementById('activityTitle').value = item.title;
+        document.getElementById('activityCategory').value = item.category;
+        document.getElementById('activityImage').value = item.image;
+        document.getElementById('activityDetail').value = item.detail || '';
+        document.getElementById('activityModalTitle').innerText = 'แก้ไขข่าวสาร';
+        window.openModal('activityModal');
     }
 }
 
